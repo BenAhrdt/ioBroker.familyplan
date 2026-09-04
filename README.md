@@ -1,116 +1,150 @@
-# FamilienPlan für ioBroker
+![Logo](admin/familienplan.svg)
 
-Der Adapter importiert Kalenderdaten aus der REST-API einer FamilienPlan-Installation. Er erzeugt dynamische, für Blockly und JavaScript nutzbare Objekte, Tagesübersichten, Geburtstags- und Abfalltexte sowie persistente Trigger.
+# ioBroker.familyplan
 
-## Installation und Einrichtung
+[![NPM version](https://img.shields.io/npm/v/iobroker.familyplan.svg)](https://www.npmjs.com/package/iobroker.familyplan)
+[![Downloads](https://img.shields.io/npm/dm/iobroker.familyplan.svg)](https://www.npmjs.com/package/iobroker.familyplan)
+![Number of installations](https://iobroker.live/badges/familyplan-installed.svg)
+![Current version in stable repository](https://iobroker.live/badges/familyplan-stable.svg)
+[![Test and Release](https://github.com/BenAhrdt/ioBroker.familyplan/actions/workflows/test-and-release.yml/badge.svg)](https://github.com/BenAhrdt/ioBroker.familyplan/actions/workflows/test-and-release.yml)
 
-Der Adapter benötigt Node.js 22 oder neuer, js-controller 6.0.11 und Admin 8.0.11. Für die lokale Entwicklung im Adapterverzeichnis `npm install` und `npm run build` ausführen. Eine lokale Installation kann anschließend über die ioBroker-Admin-Oberfläche erfolgen.
+## FamilienPlan adapter for ioBroker
 
-In FamilienPlan bei der Person, deren Berechtigungen verwendet werden sollen, einen Integrations-API-Schlüssel erzeugen. In der Adapterkonfiguration die Basisadresse (zum Beispiel `https://familienplan.example`) und den Schlüssel eintragen. Der Schlüssel wird als geschützter `protectedNative`-Wert und Passwortfeld behandelt. Danach „Verbindung testen“, speichern und die Instanz starten.
+This adapter imports calendar data from a [FamilienPlan](https://familienplan.ben-schmidt.net) installation. It provides dynamic ioBroker objects, daily summaries, birthday and waste-collection texts, and persistent automation triggers for JavaScript and Blockly.
 
-Die JSON Config umfasst:
+## Requirements
 
-- Verbindung: URL, geschützter Schlüssel, Verbindungstest, IANA-Zeitzone, Timeout und Zertifikatsprüfung.
-- Abruf: Woche, Monat, Quartal oder Jahr mit zusätzlichen Tagen davor und danach, Intervall, Retry/Backoff, optionale Kind-IDs, Standorte und Objektaufbewahrung. Große Bereiche werden API-konform in Teilabfragen zerlegt.
-- Timeline: Tage, Typfilter, Textvorlage `{title}`, `{time}`, `{date}`, `{type}`, Trennzeichen und Formate.
-- Geburtstage und Abfall: relative Vorlagen, Trennzeichen, Leertext und Titelzuordnung. Alle von der API gelieferten Abfallarten werden übernommen. Beide verwenden den vollständig konfigurierten API-Abrufbereich und benötigen kein separates Vorschautageslimit.
-- Trigger: beliebig viele Regeln, deren Name zugleich die stabile Objekt-ID bildet, mit Terminart, optionaler eigener Terminart, Kindname, Position, Offset/Einheit und Nachholfenster.
+- Node.js 22 or newer
+- js-controller 6.0.11 or newer
+- Admin 8.0.11 or newer
+- A FamilienPlan installation with integration API support
 
-Wird die SSL-Prüfung abgeschaltet, schreibt der Adapter ausdrücklich eine Sicherheitswarnung. Das sollte nur vorübergehend bei einer kontrollierten lokalen Installation geschehen.
+## Configuration
+
+Create an integration API key for the FamilienPlan person whose permissions should be used. Enter the installation's base URL and the key in the adapter configuration, test the connection, save the settings, and start the instance.
+
+The configuration contains the following groups:
+
+- **Connection:** base URL, protected API key, connection test, IANA time zone, HTTP timeout, and TLS certificate verification.
+- **Polling:** week, month, quarter, or year range with optional days before and after it, polling interval, retry settings, optional child IDs, custody/location information, and object retention.
+- **Timeline:** number of days, optional event-type filter, output template, separators, and date/time formats.
+- **Birthdays and waste:** relative output templates, separators, empty text, and waste-title mappings. All waste types returned by the API are imported.
+- **Triggers:** named rules with event type, optional custom type, child name, trigger position, offset/unit, and catch-up window.
+
+Disabling TLS certificate verification is unsafe and produces an explicit warning. Use it only temporarily in a controlled local environment.
 
 ## API
 
-Verwendet werden ausschließlich Bearer-Header, nie URL-Parameter für den Schlüssel:
+The adapter uses the following integration endpoints:
 
 - `GET /api/v1/integrations/v1/status`
 - `GET /api/v1/integrations/v1/children`
 - `GET /api/v1/integrations/v1/calendar?from_at=…&to_at=…[&child_id=…]`
 - `GET /api/v1/integrations/v1/children/{id}/location`
 
-Manueller Test:
+Authentication is sent exclusively in the `Authorization: Bearer …` header. The API key is never added to a URL.
 
-```bash
-curl -H "Authorization: Bearer <API-SCHLÜSSEL>" \
-  "https://familienplan.example/api/v1/integrations/v1/calendar?from_at=2026-09-05T00%3A00%3A00%2B02%3A00&to_at=2026-09-06T00%3A00%3A00%2B02%3A00"
-```
-
-## Objekte
+## Objects
 
 ```text
 familyplan.0
-├── info                 Verbindung, Abrufe, API-Version, Bereich und Zähler
-├── control.refresh      beschreibbarer Aktualisierungstaster
-├── calendar             unveränderte gültige API-Ereignisse und current
-├── children.<name>      dynamisch erkannte Kinder, z. B. children.rika
-├── appointments          gemeinsame stabile Terminübersicht
-├── events.appointment    dynamisch erkannte event_type-Gruppen
-├── timeline             today, tomorrow, days_2 …
-├── birthdays            relative Geburtstagsgruppen
-├── waste                relative Abfallgruppen
-└── triggers             Regelzustände, Plan und persistente Historie
+├── info                 Connection, synchronization, API version, range, and counters
+├── control.refresh      Writable manual-refresh button
+├── calendar             Valid original API events and currently active events
+├── children.<name>      Dynamically detected children, for example children.rika
+├── appointments         Shared stable appointment overview
+├── events.appointment   Dynamically detected event_type groups
+├── timeline             today, tomorrow, days_2, …
+├── birthdays            Relative birthday groups
+├── waste                Relative waste-collection groups
+└── triggers             Rule states, schedule, and persistent history
 ```
 
-Seit FamilienPlan API 0.1.82 enthalten Kalenderobjekte ausschließlich `event_type`; das frühere Feld `type` wird nicht ausgewertet. Unterstützt werden insbesondere `GENERAL`, `STAY`, `SCHOOL`, `SCHOOL_HOLIDAY`, `BIRTHDAY`, `PRIVATE`, `WASTE`, `CLEANING` und `OTHER`. Weitere von der API gelieferte Werte werden dynamisch unterstützt. `OTHER` wird zusätzlich nach dem normalisierten `custom_type_label` aufgeteilt, etwa `events.appointment.other.elternabend`; ohne Label wird `unknown` verwendet.
+FamilienPlan API 0.1.82 calendar objects use `event_type`; the former `type` property is deliberately ignored. Known types include `GENERAL`, `STAY`, `SCHOOL`, `SCHOOL_HOLIDAY`, `BIRTHDAY`, `PRIVATE`, `WASTE`, `CLEANING`, and `OTHER`. Additional API values are supported dynamically. `OTHER` is grouped further by its normalized `custom_type_label`; events without a label use `unknown`.
 
-Jeder Typordner besitzt Zusammenfassungen, Monatsgruppen sowie `next` und `nextAfter`. `next` berücksichtigt ausschließlich noch nicht begonnene Termine; laufende oder vergangene Ereignisse werden dort nicht angezeigt. Flüchtige Ereignis-IDs werden nicht als Objektpfade verwendet. `active` ist genau von einschließlich `starts_at` bis ausschließlich `ends_at` wahr; aggregierte Daten werden beim nächsten Auswertungslauf ersetzt oder entfernt.
+Every event-type folder provides summaries, month groups, `next`, and `nextAfter`. The projections contain only events that have not started. An event is active from its inclusive `starts_at` until its exclusive `ends_at` value.
 
-`calendar.current` fasst alle gerade aktiven Ereignisse in `json`, `eventIds` und `count` zusammen. `active` zeigt an, ob überhaupt ein Ereignis läuft. Der monotone Datenpunkt `revision` erhöht sich nur, wenn ein Ereignis aktiv wird oder endet, und eignet sich deshalb besonders als externer Trigger.
+`calendar.current` contains all active events as JSON, their IDs, and their count. Its monotonic `revision` value changes only when an event starts or ends and is therefore suitable as an external automation trigger.
 
-## Timeline, Geburtstage und Abfall
+## Timeline, birthdays, and waste collection
 
-Die Timeline ordnet Ereignisse kalendarisch in der konfigurierten Zeitzone zu. Mehrtägige Einträge erscheinen an jedem berührten Tag; `startsThisDay`, `endsThisDay` und `continuesThisDay` beschreiben die Lage. Sommer-/Winterzeit wird durch IANA-Zeitzonen berücksichtigt.
+Timeline entries are assigned to calendar days in the configured time zone. Multi-day events appear on every affected day. The properties `startsThisDay`, `endsThisDay`, and `continuesThisDay` describe their relation to that day. IANA time zones ensure correct daylight-saving-time handling.
 
-Geburtstage werden gruppiert und behalten das API-Alter. Fehlt `birth_date`, wird es dokumentiert ableitbar als Tag/Monat von `starts_at` und `Jahr(starts_at) - age` ausgegeben. Dies ist eine Anzeigeableitung, kein zusätzlich von der API bestätigtes Datum.
+Birthday entries retain the age supplied by the API. If `birth_date` is missing, the displayed date is derived from the day and month of `starts_at` and from `year(starts_at) - age`. This value is a documented display fallback, not an additional API-confirmed birth date.
 
-Abfall verwendet `event_type=WASTE`. Die Abfallart wird aus dem Titelteil vor „in“, „am“ oder „für“ abgeleitet; der Originaltitel bleibt erhalten. Konfigurierte Teiltext-Zuordnungen haben Vorrang.
+Waste collection uses `event_type=WASTE`. The waste type is derived from the part of the title before “in”, “am”, or “für”. Configured substring mappings take precedence, while the original title remains available.
 
-Betreuungen verwenden `event_type=STAY`. Explizite Betreuungen besitzen eine ID und `source=stay`. Aus „Wohnt bei“ erzeugte Standardbetreuungen besitzen `id=null`, `source=default` und `generated=true`. Für solche Einträge bildet der Adapter stabile interne Schlüssel aus Kind, verantwortlicher Person, Beginn, Ende und Quelle. Identische angrenzende Standardintervalle, die nur durch Teilabfragen entstanden sind, werden wieder zusammengeführt; explizite und generierte Einträge werden nicht gleichgesetzt.
+Custody entries use `event_type=STAY`. Explicit entries have an ID and `source=stay`. Generated default stays have `id=null`, `source=default`, and `generated=true`. They receive stable internal keys, and matching adjacent default intervals split only by API query chunks are merged again. Explicit and generated entries are never treated as identical.
 
-## Zuverlässige Trigger
+## Reliable triggers
 
-Positionen sind `beforeStart`, `afterStart`, `beforeEnd`, `afterEnd`; Offset-Einheiten sind Sekunden, Minuten, Stunden oder Tage. Regeln filtern direkt nach `event_type`; `custom_type_label` wird nur bei `OTHER` berücksichtigt. Der Regelname wird normalisiert als ioBroker-Objekt-ID verwendet. Die Impuls-/Nachholzeit bestimmt sowohl die Einschaltdauer von `active` als auch das Fenster, in dem eine verspätete Prüfung nachgeholt werden darf. Eine persistente SHA-256-Kennung aus Regel, `event_type`, Ereignisschlüssel, Start/Ende, Position und Offset verhindert Doppelungen nach Neustarts. Für generierte `STAY`-Einträge funktioniert dies auch bei `id=null`.
+Supported positions are `beforeStart`, `afterStart`, `beforeEnd`, and `afterEnd`; offsets may use seconds, minutes, hours, or days. Rules filter directly by `event_type`. The `custom_type_label` filter applies only to `OTHER`, and child-name matching is case-insensitive.
 
-Automatisierungen reagieren zuverlässig auf den monotonen Zähler `triggers.<regel-id>.count`. `event` enthält die vollständige Nutzlast; `lastTriggered`, `lastEventId` und `scheduledFor` liefern Kontext. Der Admin-Tab zeigt Verbindungswerte, Filter, chronologische Ereignisse und geplante beziehungsweise bereits fällige Trigger.
+The catch-up/pulse duration defines both how long `active` remains true and how long a missed trigger may be fired late. A persistent SHA-256 key made from the rule, event type, event key, start/end, position, and offset prevents duplicate triggers after a restart.
 
-### JavaScript-Beispiel
+For robust automation, react to the monotonic `triggers.<rule-id>.count` state. The `event` state contains the complete JSON payload; `lastTriggered`, `lastEventId`, and `scheduledFor` provide additional context.
+
+### JavaScript example
 
 ```javascript
-on({ id: 'familyplan.0.triggers.waste_before_start_1d.count', change: 'ne' }, obj => {
-    const payload = JSON.parse(getState('familyplan.0.triggers.waste_before_start_1d.event').val);
-    sendTo('telegram.0', 'send', { text: payload.event.title + ' wird morgen abgeholt.' });
+on({ id: "familyplan.0.triggers.waste_before_start_1d.count", change: "ne" }, () => {
+    const payload = JSON.parse(getState("familyplan.0.triggers.waste_before_start_1d.event").val);
+    sendTo("telegram.0", "send", { text: `${payload.event.title} will be collected tomorrow.` });
 });
 ```
 
 ### Blockly
 
-Einen Block „Falls Objekt geändert“ für `familyplan.0.triggers.<regel-id>.count` mit Änderungstyp „ungleich letzter Wert“ verwenden. Im Zweig kann `event` als JSON gelesen oder `lastEventId` genutzt werden. Für eine manuelle Aktualisierung `control.refresh` unbestätigt auf `true` setzen.
+Use an “Object changed” block for `familyplan.0.triggers.<rule-id>.count` with the change type “not equal to previous value”. The branch can read the JSON `event` state or use `lastEventId`. To request a manual synchronization, write `true` without acknowledgement to `control.refresh`.
 
-## Fehlerbehebung und Sicherheit
+## Troubleshooting and security
 
-- **401:** Schlüssel fehlt, ist falsch oder wurde widerrufen.
-- **403:** Die zum Schlüssel gehörende Person besitzt nicht alle benötigten Leserechte.
-- **422:** Bereich, Zeitzone oder Filter prüfen. Der Adapter zerlegt große konfigurierte Bereiche automatisch in kleinere API-Abfragen.
-- **429/5xx:** Der Adapter wiederholt begrenzt mit exponentiellem Backoff und behält vorhandene Daten.
-- **Timeout/DNS:** Erreichbarkeit, Basis-URL, DNS und konfiguriertes Timeout prüfen.
-- **TLS:** Zertifikatskette korrigieren. Die Prüfung nur in kontrollierten Testumgebungen deaktivieren.
+- **401:** The API key is missing, incorrect, or revoked.
+- **403:** The person associated with the key lacks a required read permission.
+- **422:** Check the configured range, time zone, and filters. Large ranges are automatically split into smaller API queries.
+- **429/5xx:** Requests are retried with bounded exponential backoff, and the existing data is retained.
+- **Timeout/DNS:** Check the base URL, DNS resolution, reachability, and configured timeout.
+- **TLS:** Correct the certificate chain. Disable verification only in controlled test environments.
 
-Der API-Schlüssel wird verschlüsselt gespeichert, durch `protectedNative` geschützt und zusammen mit dem Authorization-Header weder protokolliert noch unmaskiert in Fehlertexten ausgegeben. Einzelne ungültige Ereignisse werden übersprungen; unbekannte Typen und zusätzliche Felder bleiben unterstützt. Für Entwicklung und Support niemals Konfigurationen oder Diagnoseausgaben mit einem echten Schlüssel veröffentlichen.
+The API key is encrypted through `encryptedNative`, protected through `protectedNative`, and redacted together with authorization headers in error messages. Invalid individual events are skipped without rejecting an otherwise valid response. Never publish diagnostics or configuration exports containing a real key.
 
-## Entwicklung
+## Development
 
-`npm run validate` führt TypeScript-Prüfung, ESLint, Unit-/Pakettests und Build aus. HTTP-Tests verwenden ausschließlich Mocks und benötigen keine FamilienPlan-Installation.
+Install the development dependencies and run the full local validation:
 
-Der lokale ioBroker Dev-Server wird mit `npm run dev-server watch` gestartet. Die Admin-Oberfläche ist anschließend standardmäßig unter `http://127.0.0.1:8081` erreichbar. Das initiale Profil wird mit `npm run dev-server setup` angelegt; `.dev-server/` enthält ausschließlich lokale Testdaten und wird nicht paketiert.
+```bash
+npm install
+npm run validate
+```
+
+`npm run validate` performs TypeScript checking, ESLint, unit and package tests, and a clean build. HTTP tests use mocks and do not require a FamilienPlan server.
+
+Start the local ioBroker development environment with:
+
+```bash
+npm run dev-server setup
+npm run dev-server watch
+```
+
+The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is stored below `.dev-server/` and is not published.
 
 ## Changelog
 
-### Unreleased
+### **WORK IN PROGRESS**
 
-- Kompatibilität mit FamilienPlan API 0.1.82: Kalender, Kinder und Location ohne `type`.
-- Sämtliche Kalenderlogik auf `event_type` umgestellt.
-- Generierte Standardbetreuungen mit `id=null` werden stabil identifiziert und über Abfragegrenzen zusammengeführt.
-- Trigger, Admin-Tab, Parser, Filter und Objekterzeugung an das neue Modell angepasst.
+- (BenAhrdt) Require Node.js 22 and Admin 8.0.11 or newer.
+- (BenAhrdt) Add the official ioBroker test/release workflow and release-script configuration.
+- (BenAhrdt) Add compatibility with FamilienPlan API 0.1.82 and use `event_type` throughout.
+- (BenAhrdt) Add stable generated stays, range-boundary merging, event projections, persistent triggers, and administration views.
 
 ### 0.1.0 (2026-09-03)
 
-- Erste vollständige Implementierung.
+- (BenAhrdt) Initial release.
+
+Older changes are available in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
+
+## License
+
+MIT License
+
+Copyright (c) 2026 Ben Schmidt

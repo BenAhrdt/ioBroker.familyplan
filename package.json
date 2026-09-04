@@ -43,6 +43,7 @@
     "lint": "eslint .",
     "test:unit": "mocha --require ts-node/register --extension ts 'src/**/*.test.ts'",
     "test:package": "mocha test/package.test.js --exit",
+    "test:integration": "mocha test/integration.test.js --exit",
     "test": "npm run test:unit && npm run test:package",
     "validate": "npm run check && npm run lint && npm test && npm run build"
   },

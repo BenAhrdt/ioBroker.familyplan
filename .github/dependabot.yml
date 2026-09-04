@@ -8,6 +8,13 @@ updates:
       time: "00:05"
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
     assignees:
       - BenAhrdt
     versioning-strategy: increase
