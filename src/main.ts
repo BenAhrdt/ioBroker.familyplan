@@ -865,6 +865,7 @@ export class FamilienPlan extends utils.Adapter {
         ? Math.floor(start.startOf("day").diff(now.startOf("day"), "days").days)
         : 0,
       allDay: Boolean(event?.all_day),
+      note: event?.note ?? "",
       json: JSON.stringify(event ? this.displayEvent(event) : {}),
     };
     if (includeChild) {
@@ -1191,6 +1192,18 @@ export class FamilienPlan extends utils.Adapter {
     events: CalendarEvent[],
     now: DateTime,
   ): Promise<void> {
+    await this.ensureFolder("triggers", "Trigger");
+    await this.ensureState(
+      "triggers.event",
+      "Letztes allgemeines Triggerereignis",
+      "string",
+      "json",
+      false,
+      "{}",
+    );
+    if (!(await this.getStateAsync("triggers.event"))) {
+      await this.setStateAsync("triggers.event", "{}", true);
+    }
     const rules = (this.cfg.triggerRules || [])
       .map((rule) => {
         const legacy = rule as typeof rule & {
@@ -1256,12 +1269,14 @@ export class FamilienPlan extends utils.Adapter {
       }
       const payload: TriggerPayload = {
         triggerId: item.rule.name,
+        active: true,
         triggerType: item.rule.position,
         configuredOffset: item.rule.offset,
         configuredUnit: item.rule.unit,
         triggeredAt: now.toISO()!,
+        updatedAt: now.toISO()!,
         scheduledFor: this.localIso(item.scheduled.toISO()!),
-        event: item.event,
+        event: this.displayEvent(item.event),
       };
       await this.writeFields(root, {
         event: JSON.stringify(payload),
@@ -1274,6 +1289,7 @@ export class FamilienPlan extends utils.Adapter {
         count: old + 1,
         active: true,
       });
+      await this.writeFields("triggers", { event: JSON.stringify(payload) });
       this.triggerCounts.set(root, old + 1);
       this.triggerLastTriggered.set(root, now);
       history[item.key] = now.toISO()!;
@@ -1325,6 +1341,30 @@ export class FamilienPlan extends utils.Adapter {
           lastTriggered.plus({
             seconds: Math.max(0, rule.catchUpSeconds ?? 60),
           });
+      const activeState = await this.getStateAsync(`${root}.active`);
+      if (activeState?.val === true && !active) {
+        const eventState = await this.getStateAsync(`${root}.event`);
+        try {
+          const previous = JSON.parse(
+            String(eventState?.val || "{}"),
+          ) as Partial<TriggerPayload>;
+          if (previous.triggerId && previous.event) {
+            const payload: TriggerPayload = {
+              ...(previous as TriggerPayload),
+              active: false,
+              updatedAt: now.toISO()!,
+            };
+            await this.writeFields(root, { event: JSON.stringify(payload) });
+            await this.writeFields("triggers", {
+              event: JSON.stringify(payload),
+            });
+          }
+        } catch {
+          this.log.warn(
+            `Letztes Triggerereignis für ${rule.name} konnte nicht gelesen werden.`,
+          );
+        }
+      }
       await this.writeFields(root, { enabled: rule.enabled, active });
     }
     for (const oldRoot of await this.folderIds("triggers")) {
@@ -1498,7 +1538,7 @@ export class FamilienPlan extends utils.Adapter {
   private displayEvent(event: CalendarEvent): CalendarEvent {
     const responsibleName =
       event.event_type === "STAY" ? this.responsibleName(event) : "";
-    return {
+    const displayed: CalendarEvent = {
       ...event,
       title: this.displayTitle(event),
       starts_at: this.localIso(event.starts_at),
@@ -1508,6 +1548,8 @@ export class FamilienPlan extends utils.Adapter {
         : {}),
       ...(responsibleName ? { responsible_name: responsibleName } : {}),
     };
+    delete displayed.child_id;
+    return displayed;
   }
   private async loadStayResponsibleNames(
     events: CalendarEvent[],
@@ -1669,6 +1711,7 @@ export class FamilienPlan extends utils.Adapter {
       id: "ID",
       name: "Name",
       title: "Titel",
+      note: "Notiz",
       type: "Typ",
       eventType: "Terminart",
       customTypeLabel: "Eigene Terminart",
@@ -1683,6 +1726,7 @@ export class FamilienPlan extends utils.Adapter {
       daysUntil: "Verbleibende Tage",
       allDay: "Ganztägig",
       active: "Aktiv",
+      event: "Triggerereignis als JSON",
       enabled: "Regel aktiviert",
       count: "Anzahl",
       json: "Daten als JSON",

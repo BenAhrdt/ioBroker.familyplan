@@ -82,15 +82,22 @@ Supported positions are `beforeStart`, `afterStart`, `beforeEnd`, and `afterEnd`
 
 The catch-up/pulse duration defines both how long `active` remains true and how long a missed trigger may be fired late. A persistent SHA-256 key made from the rule, event type, event key, start/end, position, and offset prevents duplicate triggers after a restart.
 
-For robust automation, react to the monotonic `triggers.<rule-id>.count` state. The `event` state contains the complete JSON payload; `lastTriggered`, `lastEventId`, and `scheduledFor` provide additional context.
+For robust automation, react to the monotonic `triggers.<rule-id>.count` state. Each rule has an `active` state. Its `event` JSON is written both when the trigger becomes active and when it is reset; the payload's `active` property identifies the transition. `triggers.event` receives these transitions from every rule as a common event stream. Event JSON contains `child_name` instead of the internal `child_id` and includes the appointment `note` when supplied by the API. `lastTriggered`, `lastEventId`, and `scheduledFor` provide additional context.
 
 ### JavaScript example
 
 ```javascript
-on({ id: "familyplan.0.triggers.waste_before_start_1d.count", change: "ne" }, () => {
-    const payload = JSON.parse(getState("familyplan.0.triggers.waste_before_start_1d.event").val);
-    sendTo("telegram.0", "send", { text: `${payload.event.title} will be collected tomorrow.` });
-});
+on(
+  { id: "familyplan.0.triggers.waste_before_start_1d.count", change: "ne" },
+  () => {
+    const payload = JSON.parse(
+      getState("familyplan.0.triggers.waste_before_start_1d.event").val,
+    );
+    sendTo("telegram.0", "send", {
+      text: `${payload.event.title} will be collected tomorrow.`,
+    });
+  },
+);
 ```
 
 ### Blockly
@@ -129,6 +136,13 @@ npm run dev-server watch
 The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is stored below `.dev-server/` and is not published.
 
 ## Changelog
+
+### **WORK IN PROGRESS**
+
+- (BenAhrdt) Add per-rule active/reset trigger events and a shared JSON event stream for all trigger transitions.
+- (BenAhrdt) Include appointment notes and child names in projected event data while omitting internal child IDs.
+- (BenAhrdt) Build automatically for GitHub installations and fix unit-test discovery on Windows.
+
 ### 0.1.1 (2026-09-04)
 
 - (BenAhrdt) Require Node.js 22 and Admin 8.0.11 or newer.

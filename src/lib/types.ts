@@ -68,6 +68,7 @@ export interface BaseCalendarEvent {
   [key: string]: unknown;
 }
 export interface CalendarEvent extends BaseCalendarEvent {
+  note?: string | null;
   custom_type_label?: string | null;
   all_day?: boolean;
   responsible_user_id?: number | null;
@@ -112,6 +113,7 @@ export interface TriggerRule {
  */
 export interface TriggerPayload {
   triggerId: string;
+  active: boolean;
   /**
    *
    */
@@ -122,6 +124,7 @@ export interface TriggerPayload {
    */
   configuredUnit: TriggerUnit;
   triggeredAt: string;
+  updatedAt: string;
   scheduledFor: string;
   /**
    *

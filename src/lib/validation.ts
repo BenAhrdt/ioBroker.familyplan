@@ -37,6 +37,7 @@ const eventSchema = z
     event_type: z.string().min(1),
     id: z.union([z.string(), z.number()]).nullable(),
     title: z.string().nullable(),
+    note: z.string().nullable().optional(),
     starts_at: isoDate,
     ends_at: isoDate,
     child_id: z.number().int().nullable().optional(),
