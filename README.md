@@ -129,8 +129,7 @@ npm run dev-server watch
 The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is stored below `.dev-server/` and is not published.
 
 ## Changelog
-
-### **WORK IN PROGRESS**
+### 0.1.1 (2026-09-04)
 
 - (BenAhrdt) Require Node.js 22 and Admin 8.0.11 or newer.
 - (BenAhrdt) Add the official ioBroker test/release workflow and release-script configuration.
