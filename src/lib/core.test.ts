@@ -23,6 +23,7 @@ import {
 import {
   dueTriggers,
   futureTriggers,
+  ruleMatches,
   scheduledFor,
   triggerKey,
 } from "./triggers";
@@ -555,6 +556,43 @@ describe("triggers", () => {
         new Set(),
       ),
     ).deep.eq([]);
+  });
+  it("matches stay triggers by responsible person", () => {
+    const now = DateTime.fromISO("2026-09-05T10:00:20+02:00");
+    const rule: TriggerRule = {
+      ...base,
+      eventType: "STAY",
+      childName: "Rika",
+      responsibleName: "Ben",
+      position: "afterStart",
+      offset: 20,
+      unit: "seconds",
+      catchUpSeconds: 20,
+    };
+    const matching = event({
+      ...e,
+      event_type: "STAY",
+      child_name: "Rika",
+      responsible_name: "ben",
+    });
+    const otherHousehold = event({
+      ...matching,
+      id: 2,
+      responsible_name: "Anna",
+      starts_at: matching.ends_at,
+      ends_at: "2026-09-05T12:00:00+02:00",
+    });
+
+    expect(
+      dueTriggers(
+        [rule],
+        [matching, otherHousehold],
+        now.minus({ seconds: 1 }),
+        now,
+        new Set(),
+      ),
+    ).length(1);
+    expect(ruleMatches(rule, otherHousehold)).eq(false);
   });
   it("matches custom OTHER labels case-insensitively", () => {
     const now = DateTime.fromISO("2026-09-05T09:35:00+02:00");

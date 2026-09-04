@@ -105,7 +105,7 @@ Custody entries use `event_type=STAY`. Explicit entries have an ID and `source=s
 
 ## Reliable triggers
 
-Supported positions are `beforeStart`, `afterStart`, `beforeEnd`, and `afterEnd`; offsets may use seconds, minutes, hours, or days. Rules filter directly by `event_type`. The `custom_type_label` filter applies only to `OTHER`, and child-name matching is case-insensitive.
+Supported positions are `beforeStart`, `afterStart`, `beforeEnd`, and `afterEnd`; offsets may use seconds, minutes, hours, or days. Rules filter directly by `event_type`. The `custom_type_label` filter applies only to `OTHER`. Child-name and responsible-person matching are case-insensitive. The optional responsible-person filter is especially useful for `STAY` rules, where the end of one household's interval is usually the beginning of the next household's interval.
 
 The catch-up/pulse duration defines both how long `active` remains true and how long a missed trigger may be fired late. A persistent SHA-256 key made from the rule, event type, event key, start/end, position, and offset prevents duplicate triggers after a restart.
 
@@ -163,6 +163,11 @@ npm run dev-server watch
 The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is stored below `.dev-server/` and is not published.
 
 ## Changelog
+
+### WORK IN PROGRESS
+
+- (BenAhrdt) Add an optional responsible-person filter for `STAY` trigger rules so consecutive custody intervals for the same child do not both match an arrival rule.
+
 ### 0.1.6 (2026-09-04)
 
 - (BenAhrdt) Recalculate child custody projections every minute from cached `STAY` events so `responsibleName`, `nextChangeAt`, `next`, and `nextAfter` advance without an API synchronization.

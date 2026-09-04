@@ -1324,6 +1324,7 @@ export class FamilienPlan extends utils.Adapter {
           ...rule,
           name: rule.name?.trim() || legacy.id?.trim() || "",
           childName: rule.childName?.trim() || undefined,
+          responsibleName: rule.responsibleName?.trim() || undefined,
           catchUpSeconds:
             rule.catchUpSeconds ??
             (legacy.catchUpMinutes !== undefined
@@ -1335,6 +1336,9 @@ export class FamilienPlan extends utils.Adapter {
     const triggerEvents = events.map((event) => ({
       ...event,
       child_name: this.childName(event.child_id),
+      ...(event.event_type.toLocaleUpperCase() === "STAY"
+        ? { responsible_name: this.responsibleName(event) }
+        : {}),
     }));
     const ruleSegments = stableSegments(rules.map((rule) => rule.name));
     const ruleRoot = (name: string): string =>

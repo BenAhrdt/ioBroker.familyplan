@@ -97,6 +97,8 @@ export interface TriggerRule {
    */
   customTypeLabel?: string;
   childName?: string;
+  /** Optional responsible-person filter for stay events. */
+  responsibleName?: string;
   /**
    *
    */

@@ -27,7 +27,15 @@ export function ruleMatches(rule: TriggerRule, event: CalendarEvent): boolean {
     (!rule.childName ||
       rule.childName.localeCompare(event.child_name ?? "", undefined, {
         sensitivity: "base",
-      }) === 0)
+      }) === 0) &&
+    (!rule.responsibleName ||
+      rule.responsibleName.localeCompare(
+        typeof event.responsible_name === "string"
+          ? event.responsible_name
+          : "",
+        undefined,
+        { sensitivity: "base" },
+      ) === 0)
   );
 }
 /**
@@ -55,6 +63,7 @@ export function triggerKey(rule: TriggerRule, event: CalendarEvent): string {
         rule.eventType ?? "",
         rule.customTypeLabel ?? "",
         rule.childName ?? "",
+        rule.responsibleName ?? "",
         event.event_type,
         event.id,
         event.starts_at,
