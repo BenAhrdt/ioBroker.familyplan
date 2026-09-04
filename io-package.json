@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "familyplan",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "news": {
+      "0.1.2": {
+        "en": "Add per-rule active/reset trigger events and a shared JSON event stream for all trigger transitions.\nInclude appointment notes and child names in projected event data while omitting internal child IDs.\nBuild automatically for GitHub installations and fix unit-test discovery on Windows.",
+        "de": "Fügen Sie Aktive/Reset-Trigger pro Regel und einen JSON-Eventstream für alle Triggerübergänge hinzu.\nNehmen Sie Terminnotizen und Kindernamen in die Eventdaten auf und lassen Sie interne IDs weg.\nBuild automatisch für GitHub und Fix Unittest Discovery unter Windows.",
+        "ru": "Добавьте триггерные события активации/сброса для каждого правила и общий поток событий JSON для всех переходов по триггерам.\nВключите записи о встречах и имена детей в прогнозируемые данные о событиях, не указывая внутренние идентификаторы детей.\nАвтоматическая сборка для установок GitHub и исправление обнаружения модульных тестов в Windows.",
+        "pt": "Adicione eventos ativos/redefinidos por regra e um fluxo de eventos JSON para todas as transições.\nInclua notas e nomes de crianças nos dados projetados do evento, omitindo IDs internas.\nCrie automaticamente para o GitHub e corrija o teste de unidade no Windows.",
+        "nl": "Voeg active/reset triggergebeurtenissen per regel toe en een gedeelde JSON-eventstream voor alle triggerovergangen.\nNotities van afspraken en namen van kinderen opnemen in de gegevens van de verwachte gebeurtenissen, terwijl interne identificatiegegevens voor kinderen worden weggelaten.\nOntwikkel automatisch voor GitHub-installaties en corrigeer de detectie van unit-tests op Windows.",
+        "fr": "Ajoutez des déclencheurs actifs/réinitialisés par règle et un flux d'événements JSON partagé pour toutes les transitions.\nIncluez les notes de rendez-vous et les noms des enfants dans les prévisions, en omettant les ID internes.\nCréez automatiquement pour GitHub et corrigez Unit-Test Discovery sur Windows.",
+        "it": "Aggiunga eventi trigger active/reset per regola e un flusso JSON condiviso per tutte le transizioni.\nIncluda note sugli appuntamenti e nomi dei figli nei dati previsti omettendo gli ID interni.\nCrea automaticamente per GitHub e corregge gli unit-test discovery su Windows.",
+        "es": "Añada eventos de activación o restablecimiento por regla y un flujo de eventos JSON compartido para todas las transiciones.\nIncluya las notas de citas y los nombres de los niños en los datos de los eventos proyectados y omita los ID internos\nCree automáticamente para instalaciones de GitHub y arregle pruebas unitarias en Windows.",
+        "pl": "Dodaj aktywne/resetuj zdarzenia wyzwalające według reguły oraz współdzielony strumień zdarzeń JSON dla wszystkich przejść wyzwalających.\nUwzględniaj notatki o spotkaniach i nazwiska potomne w prognozowanych danych zdarzeń, pomijając wewnętrzne identyfikatory podrzędne.\nKompiluj automatycznie dla instalacji GitHub i naprawiaj wykrywanie testów jednostek w systemie Windows.",
+        "uk": "Додайте активні/скинуті події тригера для кожного правила та спільний потік подій JSON для всіх тригерних переходів.\nВключайте примітки про зустріч та імена дочірніх дітей до даних прогнозованих подій, опускаючи внутрішні дочірні ідентифікатори.\nСтворюйте автоматично для інсталяцій GitHub та виправте виявлення тестування одиниць у Windows.",
+        "zh-cn": "为所有触发器转换添加每条规则的激活/重置触发事件和共享的 JSON 事件流。\n在预计的事件数据中包括约会记录和孩子姓名，同时省略内部儿童 ID。\n为 GitHub 安装自动构建，并修复 Windows 上的单元测试发现。"
+      },
       "0.1.1": {
         "en": "Require Node.js 22 and Admin 8.0.11 or newer.\nAdd the official ioBroker test/release workflow and release-script configuration.\nAdd compatibility with FamilienPlan API 0.1.82 and use `event_type` throughout.\nAdd stable generated stays, range-boundary merging, event projections, persistent triggers, and administration views.",
         "de": "Erfordert Node.js 22 und Admin 8.0.11 oder neuer.\nFügt den offiziellen ioBroker-Testablauf und das Versionsskript hinzu.\nKompatibel mit FamilienPlan API 0.1.82 und verwende überall `event_type`.\nFügen Sie Stable Generated Stays, Range Merging, Eventprognosen, persistente Trigger und Admin-Views hinzu.",
