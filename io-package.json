@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "familyplan",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "news": {
+      "0.1.5": {
+        "en": "Fix child location projections by querying the current point in time and suppressing expired `nextChangeAt` values.\nPopulate child `birthDate` and `age` states more reliably by matching birthday events through child IDs or names and deriving the age from the birth date when necessary.",
+        "de": "Korrigiere Ortsprognosen, indem du den aktuellen Zeitpunkt abfragst und abgelaufene `nextChangeAt`-Werte löschst.\nFüllen Sie die Felder „Geburtsdatum“ und „Alter“ zuverlässiger aus, indem Sie Geburtstage anhand der IDs oder Namen der Kinder abgleichen und das Alter ggf. ableiten.",
+        "ru": "Исправьте дочерние проекции местоположения, запросив текущий момент времени и подавив значения «NextChangeAt» с истекшим сроком действия.\nБолее надежно заполняйте штаты «Дата рождения» и «возраст» ребенка, сопоставляя события дня рождения с помощью идентификаторов или имен детей и, при необходимости, определяя возраст с даты рождения.",
+        "pt": "Corrija projeções secundárias consultando o momento atual e suprimindo valores expirados de `nextChangeAt`.\nPreencha os estados de “data de nascimento” e “idade” da criança de forma mais confiável combinando nomes ou IDs e derivando a idade da data de nascimento.",
+        "nl": "Corrigeer de projecties van onderliggende locaties door het huidige tijdstip op te vragen en verlopen `NextChangeAt` waarden te onderdrukken.\nVul de staten 'geboortedatum' en 'leeftijd' van kinderen betrouwbaarder in door verjaardagsgebeurtenissen te koppelen aan de hand van de ID's of namen van kinderen en zo nodig de leeftijd af te leiden van de geboortedatum.",
+        "fr": "Corrigez les prévisions de localisation des enfants en interrogeant la date actuelle et en supprimant les valeurs « NextChangeat » expirées.\nRenseignez les états « Date de naissance » et « âge » de l'enfant de manière plus fiable en faisant correspondre les anniversaires par identifiant ou prénom et en déduisant l'âge de la date de naissance si nécessaire.",
+        "it": "Corregge le proiezioni della posizione dei bambini interrogando l'ora corrente e sopprimendo i valori NextChangeAt scaduti.\nCompila gli stati «BirthDate» e «age» dei bambini in modo più affidabile abbinando gli eventi di compleanno con ID o nomi e derivando l'età dalla data di nascita se necessario.",
+        "es": "Corrija las proyecciones de ubicaciones secundarias consultando el momento actual y suprimiendo los valores caducados de «NextChangeAat».\nRellene los estados de «fecha de nacimiento» y «edad» del niño de forma más fiable haciendo coincidir los cumpleaños con los carnés o nombres de los niños y derivando la edad de la fecha de nacimiento si es necesario.",
+        "pl": "Napraw rzuty położenia podrzędnego, wykonując zapytanie o bieżący punkt w czasie i usuwając wygasłe wartości `nextChangEat`.\nWypełnij stany „Data urodzenia” i „wiek” dziecka bardziej wiarygodnie, dopasowując wydarzenia urodzinowe za pomocą identyfikatorów lub imion dziecka i wyprowadzając wiek z daty urodzenia, jeśli to konieczne.",
+        "uk": "Виправте проекції дочірнього розташування, запитуючи поточну точку часу та придушуючи значення `NextChangeAT`, що закінчилися.\nНаповнюйте стани «Дата народження» та «вік» дитини надійніше, зіставляючи події дня народження за допомогою ідентифікаторів або імен дитини та виводячи вік з дати народження, коли це необхідно.",
+        "zh-cn": "通过查询当前时间点和隐藏过期的 `nextChangeat`值来修复孩子的位置预测。\n通过孩子 ID 或姓名匹配生日事件，并在必要时从出生日期推导年龄，从而更可靠地填充孩子 “出生日期” 和 “年龄” 状态。"
+      },
       "0.1.4": {
         "en": "Expand the English documentation with step-by-step instructions for connecting ioBroker to the FamilienPlan API.",
         "de": "Erweitere die englische Dokumentation mit schrittweisen Anleitungen zur Anbindung von ioBroker an die FamilienPlan API.",
