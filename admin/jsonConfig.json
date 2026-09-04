@@ -1,0 +1,50 @@
+{
+  "$schema":"https://raw.githubusercontent.com/ioBroker/ioBroker.admin/master/packages/jsonConfig/schemas/jsonConfig.json",
+  "i18n":true,
+  "type":"tabs",
+  "items":{
+    "connection":{"type":"panel","label":{"de":"Verbindung","en":"Connection"},"items":{
+      "baseUrl":{"type":"text","label":{"de":"FamilienPlan-Basis-URL","en":"FamilienPlan base URL"},"sm":8,"validator":"!data.baseUrl || /^https?:\\/\\//.test(data.baseUrl)","validatorErrorText":"Bitte eine gültige HTTP- oder HTTPS-URL eingeben.","validatorNoSaveOnError":true},
+      "apiKey":{"type":"password","label":{"de":"API-Schlüssel","en":"API key"},"sm":4,"newLine":true},
+      "test":{"type":"sendTo","label":{"de":"Verbindung und Berechtigungen testen","en":"Test connection and permissions"},"command":"testConnection","jsonData":"{\"baseUrl\":\"${data.baseUrl}\",\"apiKey\":\"${data.apiKey}\",\"timezone\":\"${data.timezone}\",\"httpTimeout\":${data.httpTimeout},\"verifySsl\":${data.verifySsl},\"pastDays\":${data.pastDays},\"futureDays\":${data.futureDays},\"rangePeriod\":\"${data.rangePeriod}\",\"childIds\":\"${data.childIds}\"}","showProcess":true,"timeout":30000,"variant":"contained","newLine":true,"sm":4},
+      "timezone":{"type":"text","label":{"de":"Zeitzone","en":"Time zone"},"default":"Europe/Berlin","sm":4},
+      "httpTimeout":{"type":"number","label":{"de":"HTTP-Timeout (ms)","en":"HTTP timeout (ms)"},"min":1000,"max":120000,"sm":4},
+      "verifySsl":{"type":"checkbox","label":{"de":"SSL-Zertifikat prüfen","en":"Verify SSL certificate"},"help":{"de":"Deaktivieren ist unsicher und erzeugt eine Warnung im Log.","en":"Disabling is insecure and creates a log warning."},"sm":4}
+    }},
+    "polling":{"type":"panel","label":{"de":"Abruf","en":"Polling"},"items":{
+      "rangePeriod":{"type":"select","label":{"de":"Zeitraum","en":"Period"},"options":[{"label":{"de":"Diese Woche","en":"This week"},"value":"week"},{"label":{"de":"Dieser Monat","en":"This month"},"value":"month"},{"label":{"de":"Dieses Quartal","en":"This quarter"},"value":"quarter"},{"label":{"de":"Dieses Jahr","en":"This year"},"value":"year"}],"default":"year","sm":3},
+      "pastDays":{"type":"number","label":{"de":"Vorherige Tage","en":"Previous days"},"help":{"de":"Erweitert den gewählten Zeitraum vor dessen Beginn.","en":"Extends the selected period before its start."},"min":0,"max":365,"default":31,"sm":3},
+      "futureDays":{"type":"number","label":{"de":"Nachfolgende Tage","en":"Following days"},"help":{"de":"Erweitert den gewählten Zeitraum nach dessen Ende.","en":"Extends the selected period after its end."},"min":0,"max":365,"default":31,"sm":3},
+      "pollInterval":{"type":"number","label":{"de":"Intervall (Minuten)","en":"Interval (minutes)"},"min":1,"sm":3},
+      "eventRetentionDays":{"type":"number","label":{"de":"Objekt-Aufbewahrung (Tage)","en":"Object retention (days)"},"help":{"de":"So lange bleiben Einzelobjekte erhalten, nachdem sie nicht mehr von der API geliefert wurden. Sie werden sofort inaktiv und erst nach dieser Frist gelöscht.","en":"How long individual objects remain after the API no longer returns them. They become inactive immediately and are deleted after this period."},"min":0,"sm":3},
+      "retryCount":{"type":"number","label":{"de":"Wiederholungsversuche","en":"Retries"},"min":0,"max":10,"newLine":true,"sm":3},
+      "retryBackoff":{"type":"number","label":{"de":"Backoff-Basis (ms)","en":"Backoff base (ms)"},"min":100,"sm":3},
+      "childIds":{"type":"text","label":{"de":"Kind-IDs (kommagetrennt, leer = alle)","en":"Child IDs (comma-separated, blank = all)"},"help":{"de":"Optional auf bestimmte Kinder einschränken. Leer lädt die freigegebenen Kalenderdaten aller Kinder.","en":"Optionally restrict the query to specific children. Empty loads permitted calendar data for all children."},"sm":3},
+      "fetchLocations":{"type":"checkbox","label":{"de":"Aufenthalts-/Betreuungsstatus abrufen","en":"Fetch custody/location status"},"help":{"de":"Lädt je Kind die aktuell verantwortliche Person, Quelle, Gültigkeit und den nächsten Wechsel. Es werden keine GPS-Koordinaten abgerufen.","en":"Loads the currently responsible person, source, validity and next change for each child. No GPS coordinates are retrieved."},"sm":3}
+    }},
+    "timeline":{"type":"panel","label":"Timeline","items":{
+      "timelineEnabled":{"type":"checkbox","label":{"de":"Aktiviert","en":"Enabled"},"sm":3},"timelineDays":{"type":"number","label":{"de":"Tage","en":"Days"},"min":1,"max":366,"sm":3},
+      "timelineTypes":{"type":"text","label":{"de":"Typen (kommagetrennt, leer = alle)","en":"Types (comma-separated, blank = all)"},"sm":6},
+      "timelineTemplate":{"type":"text","label":{"de":"Eintragsvorlage","en":"Entry template"},"help":"{title}, {time}, {date}, {type}","newLine":true,"sm":6},
+      "timelineSeparator":{"type":"text","label":{"de":"Trennzeichen","en":"Separator"},"sm":2},"timeFormat":{"type":"text","label":{"de":"Zeitformat","en":"Time format"},"sm":2},"dateFormat":{"type":"text","label":{"de":"Datumsformat","en":"Date format"},"sm":2}
+    }},
+    "birthdays":{"type":"panel","label":{"de":"Geburtstage","en":"Birthdays"},"items":{
+      "birthdaysEnabled":{"type":"checkbox","label":{"de":"Aktiviert","en":"Enabled"},"sm":3},"birthdayDateFormat":{"type":"text","label":{"de":"Datumsformat","en":"Date format"},"sm":3},"birthdaySeparator":{"type":"text","label":{"de":"Trennzeichen","en":"Separator"},"sm":3},
+      "birthdayTodayTemplate":{"type":"text","label":{"de":"Vorlage heute","en":"Today template"},"newLine":true,"sm":6},"birthdayTomorrowTemplate":{"type":"text","label":{"de":"Vorlage morgen","en":"Tomorrow template"},"sm":6},"birthdayFutureTemplate":{"type":"text","label":{"de":"Vorlage weitere Tage","en":"Future template"},"newLine":true,"sm":6},"birthdayEmptyText":{"type":"text","label":{"de":"Leertext","en":"Empty text"},"sm":6}
+    }},
+    "waste":{"type":"panel","label":{"de":"Abfall","en":"Waste"},"items":{
+      "wasteEnabled":{"type":"checkbox","label":{"de":"Aktiviert","en":"Enabled"},"sm":3},
+      "wasteTodayTemplate":{"type":"text","label":{"de":"Vorlage heute","en":"Today template"},"newLine":true,"sm":6},"wasteTomorrowTemplate":{"type":"text","label":{"de":"Vorlage morgen","en":"Tomorrow template"},"sm":6},"wasteFutureTemplate":{"type":"text","label":{"de":"Vorlage weitere Tage","en":"Future template"},"newLine":true,"sm":6},"wasteSeparator":{"type":"text","label":{"de":"Trennzeichen","en":"Separator"},"sm":3},"wasteEmptyText":{"type":"text","label":{"de":"Leertext","en":"Empty text"},"sm":3},
+      "wasteMappings":{"type":"table","label":{"de":"Titel-Zuordnung","en":"Title mappings"},"newLine":true,"items":[{"type":"text","attr":"match","title":{"de":"Titel enthält","en":"Title contains"}},{"type":"text","attr":"name","title":{"de":"Anzeigename","en":"Display name"}}]}
+    }},
+    "triggers":{"type":"panel","label":"Trigger","items":{
+      "triggerHistoryDays":{"type":"number","label":{"de":"Historie aufbewahren (Tage)","en":"History retention (days)"},"min":1,"max":3650,"sm":4},
+      "triggerRules":{"type":"table","label":{"de":"Triggerregeln","en":"Trigger rules"},"newLine":true,"uniqueColumns":["name"],"items":[
+        {"type":"text","attr":"name","title":{"de":"Name / ID","en":"Name / ID"},"width":"16%"},{"type":"checkbox","attr":"enabled","title":{"de":"Aktiv","en":"Active"},"width":"6%","default":true},
+        {"type":"select","attr":"eventType","title":{"de":"Terminart","en":"Event type"},"options":[{"label":{"de":"Allgemein","en":"General"},"value":"GENERAL"},{"label":{"de":"Betreuung","en":"Stay"},"value":"STAY"},{"label":{"de":"Schule","en":"School"},"value":"SCHOOL"},{"label":{"de":"Schulferien","en":"School holiday"},"value":"SCHOOL_HOLIDAY"},{"label":{"de":"Geburtstag","en":"Birthday"},"value":"BIRTHDAY"},{"label":{"de":"Privat","en":"Private"},"value":"PRIVATE"},{"label":{"de":"Abfall","en":"Waste"},"value":"WASTE"},{"label":{"de":"Reinigung","en":"Cleaning"},"value":"CLEANING"},{"label":{"de":"Sonstige","en":"Other"},"value":"OTHER"}]},{"type":"text","attr":"customTypeLabel","title":{"de":"Eigene Terminart","en":"Custom event type"},"hidden":"data.eventType !== 'OTHER'"},{"type":"text","attr":"childName","title":{"de":"Kindname (leer = alle)","en":"Child name (blank = all)"},"help":{"de":"Der Name wird ohne Beachtung der Groß-/Kleinschreibung verglichen.","en":"The name comparison is case-insensitive."}},
+        {"type":"select","attr":"position","title":{"de":"Zeitpunkt","en":"Position"},"options":[{"label":{"de":"Vor Beginn","en":"Before start"},"value":"beforeStart"},{"label":{"de":"Nach Beginn","en":"After start"},"value":"afterStart"},{"label":{"de":"Vor Ende","en":"Before end"},"value":"beforeEnd"},{"label":{"de":"Nach Ende","en":"After end"},"value":"afterEnd"}]},
+        {"type":"number","attr":"offset","title":{"de":"Offset","en":"Offset"},"min":0},{"type":"select","attr":"unit","title":{"de":"Einheit","en":"Unit"},"options":[{"label":{"de":"Sekunden","en":"seconds"},"value":"seconds"},{"label":{"de":"Minuten","en":"minutes"},"value":"minutes"},{"label":{"de":"Stunden","en":"hours"},"value":"hours"},{"label":{"de":"Tage","en":"days"},"value":"days"}]},{"type":"number","attr":"catchUpSeconds","title":{"de":"Impuls-/Nachholzeit (Sekunden)","en":"Pulse/catch-up time (seconds)"},"help":{"de":"So lange bleibt active nach der Auslösung wahr. Gleichzeitig wird ein verpasster Zeitpunkt innerhalb dieses Fensters nachgeholt.","en":"How long active remains true after firing. A missed scheduled time is also caught up within this window."},"min":1,"default":60}
+      ]}
+    }}
+  }
+}

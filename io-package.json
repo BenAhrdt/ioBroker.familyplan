@@ -1,0 +1,48 @@
+{
+  "common": {
+    "name": "familyplan", "version": "0.1.0",
+    "news": {"0.1.0":{"en":"Initial release","de":"Erste Veröffentlichung","ru":"Первый выпуск","pt":"Versão inicial","nl":"Eerste uitgave","fr":"Première version","it":"Versione iniziale","es":"Versión inicial","pl":"Pierwsze wydanie","uk":"Перший випуск","zh-cn":"首次发布"}},
+    "titleLang": {"en":"FamilienPlan","de":"FamilienPlan"},
+    "desc": {"en":"Imports FamilienPlan calendars and provides reliable automation triggers.","de":"Importiert FamilienPlan-Kalender und stellt zuverlässige Automatisierungstrigger bereit."},
+    "authors": ["Ben Schmidt <github@ben-schmidt.net>"],
+    "keywords": ["calendar","family","appointments","waste","birthday"],
+    "licenseInformation": {"type":"free","license":"MIT"},
+    "platform": "Javascript/Node.js", "icon": "familienplan.svg", "enabled": true,
+    "extIcon": "https://raw.githubusercontent.com/BenAhrdt/ioBroker.familyplan/main/admin/familienplan.svg",
+    "readme": "https://github.com/BenAhrdt/ioBroker.familyplan/blob/main/README.md",
+    "loglevel": "info", "tier": 2, "mode": "daemon", "type": "date-and-time", "compact": true,
+    "connectionType": "cloud", "dataSource": "poll", "messagebox": true,
+    "adminUI": {"config":"json","tab":"html"},
+    "adminTab": {"singleton":false,"name":{"en":"FamilienPlan","de":"FamilienPlan"},"link":""},
+    "dependencies": [{"js-controller":">=6.0.11"}], "globalDependencies": [{"admin":">=7.0.23"}]
+  },
+  "native": {
+    "baseUrl":"", "apiKey":"", "timezone":"Europe/Berlin", "httpTimeout":10000, "verifySsl":true,
+    "pastDays":31, "futureDays":31, "rangePeriod":"year", "pollInterval":15, "retryCount":3, "retryBackoff":1000, "childIds":"", "fetchLocations":true, "eventRetentionDays":7,
+    "timelineEnabled":true, "timelineDays":7, "timelineTypes":"", "timelineTemplate":"{time} {title}", "timelineSeparator":" · ", "timeFormat":"HH:mm", "dateFormat":"dd.MM.yyyy",
+    "birthdaysEnabled":true, "birthdayTodayTemplate":"Heute wird {name} {age}.", "birthdayTomorrowTemplate":"Morgen wird {name} {age}.", "birthdayFutureTemplate":"In {days} Tagen wird {name} {age}.", "birthdaySeparator":" ", "birthdayDateFormat":"dd.MM.yyyy", "birthdayEmptyText":"",
+    "wasteEnabled":true, "wasteTodayTemplate":"Heute wird {title} abgeholt.", "wasteTomorrowTemplate":"Morgen wird {title} abgeholt.", "wasteFutureTemplate":"In {days} Tagen wird {title} abgeholt.", "wasteSeparator":" ", "wasteMappings":[], "wasteEmptyText":"",
+    "triggerRules":[], "triggerHistoryDays":90
+  },
+  "encryptedNative": ["apiKey"],
+  "protectedNative": ["apiKey"],
+  "instanceObjects": [
+    {"_id":"info","type":"channel","common":{"name":{"en":"Information","de":"Information"}},"native":{}},
+    {"_id":"info.connection","type":"state","common":{"name":{"en":"Connection","de":"Verbindung"},"type":"boolean","role":"indicator.connected","read":true,"write":false,"def":false},"native":{}},
+    {"_id":"info.lastSync","type":"state","common":{"name":{"en":"Last sync attempt","de":"Letzter Abrufversuch"},"type":"string","role":"date","read":true,"write":false,"def":""},"native":{}},
+    {"_id":"info.lastSuccessfulSync","type":"state","common":{"name":{"en":"Last successful sync","de":"Letzter erfolgreicher Abruf"},"type":"string","role":"date","read":true,"write":false,"def":""},"native":{}},
+    {"_id":"info.nextSync","type":"state","common":{"name":{"en":"Next sync","de":"Nächster Abruf"},"type":"string","role":"date","read":true,"write":false,"def":""},"native":{}},
+    {"_id":"info.lastError","type":"state","common":{"name":{"en":"Last error","de":"Letzter Fehler"},"type":"string","role":"text","read":true,"write":false,"def":""},"native":{}},
+    {"_id":"info.apiVersion","type":"state","common":{"name":{"en":"API version","de":"API-Version"},"type":"string","role":"info.version","read":true,"write":false,"def":""},"native":{}},
+    {"_id":"info.scopes","type":"state","common":{"name":"API scopes","type":"string","role":"json","read":true,"write":false,"def":"[]"},"native":{}},
+    {"_id":"info.eventCount","type":"state","common":{"name":{"en":"Event count","de":"Anzahl Ereignisse"},"type":"number","role":"value","read":true,"write":false,"def":0},"native":{}},
+    {"_id":"info.queryRange","type":"state","common":{"name":{"en":"Query range","de":"Abfragezeitraum"},"type":"string","role":"json","read":true,"write":false,"def":"{}"},"native":{}},
+    {"_id":"info.scheduledTriggerCount","type":"state","common":{"name":{"en":"Scheduled triggers","de":"Geplante Trigger"},"type":"number","role":"value","read":true,"write":false,"def":0},"native":{}},
+    {"_id":"control","type":"channel","common":{"name":{"en":"Control","de":"Steuerung"}},"native":{}},
+    {"_id":"control.refresh","type":"state","common":{"name":{"en":"Refresh now","de":"Jetzt aktualisieren"},"type":"boolean","role":"button","read":true,"write":true,"def":false},"native":{}},
+    {"_id":"calendar","type":"channel","common":{"name":{"en":"Calendar","de":"Kalender"}},"native":{}},
+    {"_id":"calendar.json","type":"state","common":{"name":{"en":"Original calendar data","de":"Original-Kalenderdaten"},"type":"string","role":"json","read":true,"write":false,"def":"[]"},"native":{}},
+    {"_id":"calendar.count","type":"state","common":{"name":{"en":"Calendar count","de":"Kalenderanzahl"},"type":"number","role":"value","read":true,"write":false,"def":0},"native":{}},
+    {"_id":"calendar.lastUpdated","type":"state","common":{"name":{"en":"Last update","de":"Letzte Aktualisierung"},"type":"string","role":"date","read":true,"write":false,"def":""},"native":{}}
+  ]
+}
