@@ -163,8 +163,7 @@ npm run dev-server watch
 The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is stored below `.dev-server/` and is not published.
 
 ## Changelog
-
-### **WORK IN PROGRESS**
+### 0.1.6 (2026-09-04)
 
 - (BenAhrdt) Recalculate child custody projections every minute from cached `STAY` events so `responsibleName`, `nextChangeAt`, `next`, and `nextAfter` advance without an API synchronization.
 - (BenAhrdt) Accept nullable birthday fields, match child names embedded in birthday titles, and keep the child age current from the derived birth date.
@@ -187,13 +186,6 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
 - (BenAhrdt) Add per-rule active/reset trigger events and a shared JSON event stream for all trigger transitions.
 - (BenAhrdt) Include appointment notes and child names in projected event data while omitting internal child IDs.
 - (BenAhrdt) Build automatically for GitHub installations and fix unit-test discovery on Windows.
-
-### 0.1.1 (2026-09-04)
-
-- (BenAhrdt) Require Node.js 22 and Admin 8.0.11 or newer.
-- (BenAhrdt) Add the official ioBroker test/release workflow and release-script configuration.
-- (BenAhrdt) Add compatibility with FamilienPlan API 0.1.82 and use `event_type` throughout.
-- (BenAhrdt) Add stable generated stays, range-boundary merging, event projections, persistent triggers, and administration views.
 
 Older changes are available in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 
