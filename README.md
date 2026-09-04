@@ -164,7 +164,7 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
 
 ## Changelog
 
-### WORK IN PROGRESS
+### **WORK IN PROGRESS**
 
 - (BenAhrdt) Add an optional responsible-person filter for `STAY` trigger rules so consecutive custody intervals for the same child do not both match an arrival rule.
 
