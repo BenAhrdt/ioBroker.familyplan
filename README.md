@@ -4,7 +4,7 @@ Der Adapter importiert Kalenderdaten aus der REST-API einer FamilienPlan-Install
 
 ## Installation und Einrichtung
 
-Der Adapter benötigt Node.js 20 oder neuer, js-controller 6.0.11 und Admin 7.0.23. Für die lokale Entwicklung im Adapterverzeichnis `npm install` und `npm run build` ausführen. Eine lokale Installation kann anschließend über die ioBroker-Admin-Oberfläche erfolgen.
+Der Adapter benötigt Node.js 22 oder neuer, js-controller 6.0.11 und Admin 8.0.11. Für die lokale Entwicklung im Adapterverzeichnis `npm install` und `npm run build` ausführen. Eine lokale Installation kann anschließend über die ioBroker-Admin-Oberfläche erfolgen.
 
 In FamilienPlan bei der Person, deren Berechtigungen verwendet werden sollen, einen Integrations-API-Schlüssel erzeugen. In der Adapterkonfiguration die Basisadresse (zum Beispiel `https://familienplan.example`) und den Schlüssel eintragen. Der Schlüssel wird als geschützter `protectedNative`-Wert und Passwortfeld behandelt. Danach „Verbindung testen“, speichern und die Instanz starten.
 

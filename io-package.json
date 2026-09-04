@@ -14,7 +14,7 @@
     "connectionType": "cloud", "dataSource": "poll", "messagebox": true,
     "adminUI": {"config":"json","tab":"html"},
     "adminTab": {"singleton":false,"name":{"en":"FamilienPlan","de":"FamilienPlan"},"link":""},
-    "dependencies": [{"js-controller":">=6.0.11"}], "globalDependencies": [{"admin":">=7.0.23"}]
+    "dependencies": [{"js-controller":">=6.0.11"}], "globalDependencies": [{"admin":">=8.0.11"}]
   },
   "native": {
     "baseUrl":"", "apiKey":"", "timezone":"Europe/Berlin", "httpTimeout":10000, "verifySsl":true,

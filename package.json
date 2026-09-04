@@ -23,7 +23,7 @@
     "url": "https://github.com/BenAhrdt/ioBroker.familyplan/issues"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "main": "build/main.js",
   "files": [
@@ -60,12 +60,12 @@
     "@iobroker/dev-server": "^0.8.0",
     "@iobroker/eslint-config": "^2.3.4",
     "@iobroker/testing": "^5.3.0",
-    "@tsconfig/node20": "^20.1.6",
+    "@tsconfig/node22": "^22.0.6",
     "@types/chai": "^4.3.20",
     "@types/iobroker": "npm:@iobroker/types@^7.1.0",
     "@types/luxon": "^3.7.1",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^20.19.13",
+    "@types/node": "^22.20.0",
     "chai": "^4.5.0",
     "eslint": "^9.35.0",
     "mocha": "^11.7.1",
