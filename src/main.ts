@@ -5,6 +5,8 @@ import {
   birthdayItem,
   dayKey,
   eventsForDay,
+  findBirthdayForChild,
+  futureTimestamp,
   isEventActive,
   nextOccurrences,
   occurrenceKey,
@@ -288,7 +290,7 @@ export class FamilienPlan extends utils.Adapter {
       }
       events = this.deduplicate(events);
       this.childBirthdayEvents = events.filter(
-        (event) => event.event_type === "BIRTHDAY",
+        (event) => event.event_type.toLocaleUpperCase() === "BIRTHDAY",
       );
       if (
         this.cfg.rangePeriod !== "year" &&
@@ -318,7 +320,7 @@ export class FamilienPlan extends utils.Adapter {
             );
           }
           this.childBirthdayEvents = this.deduplicate(yearly).filter(
-            (event) => event.event_type === "BIRTHDAY",
+            (event) => event.event_type.toLocaleUpperCase() === "BIRTHDAY",
           );
         } catch (error) {
           this.log.debug(
@@ -664,10 +666,11 @@ export class FamilienPlan extends utils.Adapter {
         : (birthdayData?.birthDate ?? "");
       const parsedBirthDate = DateTime.fromISO(birthDate);
       const age =
-        birthdayData?.age ??
-        (parsedBirthDate.isValid
-          ? Math.floor(now.diff(parsedBirthDate, "years").years)
-          : 0);
+        typeof birthday?.age === "number"
+          ? birthday.age
+          : parsedBirthDate.isValid
+            ? Math.floor(now.diff(parsedBirthDate, "years").years)
+            : 0;
       const childJson = {
         name: child.name,
         birthDate,
@@ -681,7 +684,9 @@ export class FamilienPlan extends utils.Adapter {
       });
       if (this.cfg.fetchLocations) {
         try {
-          const loc = await this.withRetry(() => api.location(child.id));
+          const loc = await this.withRetry(() =>
+            api.location(child.id, now.toISO()!),
+          );
           const lr = `${root}.location`;
           await this.ensureFolder(lr, "Aktuelle Betreuung");
           if (loc.responsible_user_id != null && loc.responsible_name) {
@@ -690,18 +695,19 @@ export class FamilienPlan extends utils.Adapter {
               loc.responsible_name,
             );
           }
+          const nextChangeAt = futureTimestamp(loc.next_change_at, now);
           const locationJson = {
             responsibleName: loc.responsible_name ?? "",
-            nextChangeAt: loc.next_change_at ?? "",
+            nextChangeAt,
             lastUpdated: now.toISO()!,
           };
           await this.writeFields(lr, {
             responsibleName: loc.responsible_name ?? "",
-            nextChangeAt: loc.next_change_at ?? "",
+            nextChangeAt,
             lastUpdated: now.toISO()!,
             json: JSON.stringify(locationJson),
           });
-          let forecastAt = loc.next_change_at ?? "";
+          let forecastAt = nextChangeAt;
           for (const [key, label] of [
             ["next", "Nächste Betreuung"],
             ["nextAfter", "Darauffolgende Betreuung"],
@@ -731,7 +737,7 @@ export class FamilienPlan extends utils.Adapter {
               effectiveAt,
               now,
             );
-            forecastAt = forecast?.next_change_at ?? "";
+            forecastAt = futureTimestamp(forecast?.next_change_at, now);
           }
         } catch (error) {
           this.log.warn(
@@ -1481,13 +1487,7 @@ export class FamilienPlan extends utils.Adapter {
     );
   }
   private findChildBirthday(child: Child): CalendarEvent | undefined {
-    return this.childBirthdayEvents.find(
-      (event) =>
-        event.child_id === child.id ||
-        (event.title ?? "").localeCompare(child.name, undefined, {
-          sensitivity: "base",
-        }) === 0,
-    );
+    return findBirthdayForChild(this.childBirthdayEvents, child);
   }
   private childName(childId: number | null | undefined): string {
     if (childId == null) {

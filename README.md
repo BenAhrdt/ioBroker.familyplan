@@ -157,6 +157,11 @@ npm run dev-server watch
 The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is stored below `.dev-server/` and is not published.
 
 ## Changelog
+### **WORK IN PROGRESS**
+
+- (BenAhrdt) Fix child location projections by querying the current point in time and suppressing expired `nextChangeAt` values.
+- (BenAhrdt) Populate child `birthDate` and `age` states more reliably by matching birthday events through child IDs or names and deriving the age from the birth date when necessary.
+
 ### 0.1.4 (2026-09-04)
 
 - (BenAhrdt) Expand the English documentation with step-by-step instructions for connecting ioBroker to the FamilienPlan API.

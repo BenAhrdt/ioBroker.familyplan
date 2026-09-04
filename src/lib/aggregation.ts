@@ -2,9 +2,47 @@ import { DateTime, Interval } from "luxon";
 import type {
   BirthdayAggregation,
   CalendarEvent,
+  Child,
   TimelineEntry,
   WasteAggregation,
 } from "./types";
+
+const normalizedPersonName = (value: string): string =>
+  value.normalize("NFKC").trim().toLocaleLowerCase().replace(/\s+/g, " ");
+
+export function findBirthdayForChild(
+  events: CalendarEvent[],
+  child: Child,
+): CalendarEvent | undefined {
+  const birthdays = events.filter(
+    (event) => event.event_type.toLocaleUpperCase() === "BIRTHDAY",
+  );
+  return (
+    birthdays.find((event) => event.child_id === child.id) ??
+    birthdays.find(
+      (event) =>
+        typeof event.child_name === "string" &&
+        normalizedPersonName(event.child_name) ===
+          normalizedPersonName(child.name),
+    ) ??
+    birthdays.find(
+      (event) =>
+        normalizedPersonName(event.title ?? "") ===
+        normalizedPersonName(child.name),
+    )
+  );
+}
+
+export function futureTimestamp(
+  value: string | null | undefined,
+  now: DateTime,
+): string {
+  if (!value) {
+    return "";
+  }
+  const parsed = DateTime.fromISO(value, { setZone: true });
+  return parsed.isValid && parsed.toMillis() > now.toMillis() ? value : "";
+}
 
 export const dayKey = (now: DateTime, offset: number): string =>
   offset === 0 ? "today" : offset === 1 ? "tomorrow" : `days_${offset}`;

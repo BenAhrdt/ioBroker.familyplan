@@ -4,6 +4,8 @@ import { FamilienPlanApiClient, ApiError } from "./api-client";
 import {
   birthdayItem,
   eventsForDay,
+  findBirthdayForChild,
+  futureTimestamp,
   isEventActive,
   nextOccurrences,
   parseChildIds,
@@ -318,6 +320,29 @@ describe("aggregations", () => {
     );
     expect(next?.title).eq("Später");
     expect(nextAfter?.title).eq("Noch später");
+  });
+  it("does not expose expired location changes", () => {
+    expect(futureTimestamp("2026-09-05T11:59:59+02:00", now)).eq("");
+    expect(futureTimestamp("2026-09-05T12:00:00+02:00", now)).eq("");
+    expect(futureTimestamp("2026-09-05T12:00:01+02:00", now)).eq(
+      "2026-09-05T12:00:01+02:00",
+    );
+  });
+  it("matches a child's birthday by child_name and ignores event type casing", () => {
+    const birthday = event({
+      event_type: "birthday",
+      child_id: null,
+      child_name: " Rika ",
+      title: "Geburtstag",
+      age: 12,
+    });
+    expect(
+      findBirthdayForChild([birthday], {
+        id: 4,
+        name: "Rika",
+        default_responsible_user_id: null,
+      }),
+    ).eq(birthday);
   });
   it("merges adjacent generated default stays but not explicit stays", () => {
     const first = event({
