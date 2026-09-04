@@ -87,6 +87,12 @@ Every event-type folder provides summaries, month groups, `next`, and `nextAfter
 
 `calendar.current` contains all active events as JSON, their IDs, and their count. Its monotonic `revision` value changes only when an event starts or ends and is therefore suitable as an external automation trigger.
 
+### Children and custody changes
+
+Each `children.<name>` folder exposes the child's `name`, `birthDate`, `age`, and a JSON summary. Birthdays are matched by child ID, `child_name`, or the child's name in the birthday title. Calendar responses containing `age: null` or `birth_date: null` remain valid. If the children endpoint does not provide a birth date, the adapter derives it from a matching birthday event; the `age` state then represents the age at the current date.
+
+When location retrieval is enabled, `children.<name>.location` contains the current responsible person and `nextChangeAt`; `next` and `nextAfter` contain the following custody periods. These projections are recalculated from the cached `STAY` events during the local minute tick. Consequently, reaching `nextChangeAt` updates the child location without waiting for another API synchronization. An API synchronization is still required to retrieve newly created, edited, or deleted source data from FamilienPlan.
+
 ## Timeline, birthdays, and waste collection
 
 Timeline entries are assigned to calendar days in the configured time zone. Multi-day events appear on every affected day. The properties `startsThisDay`, `endsThisDay`, and `continuesThisDay` describe their relation to that day. IANA time zones ensure correct daylight-saving-time handling.
@@ -157,6 +163,12 @@ npm run dev-server watch
 The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is stored below `.dev-server/` and is not published.
 
 ## Changelog
+
+### **WORK IN PROGRESS**
+
+- (BenAhrdt) Recalculate child custody projections every minute from cached `STAY` events so `responsibleName`, `nextChangeAt`, `next`, and `nextAfter` advance without an API synchronization.
+- (BenAhrdt) Accept nullable birthday fields, match child names embedded in birthday titles, and keep the child age current from the derived birth date.
+
 ### 0.1.5 (2026-09-04)
 
 - (BenAhrdt) Fix child location projections by querying the current point in time and suppressing expired `nextChangeAt` values.

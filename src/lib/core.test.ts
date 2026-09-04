@@ -344,6 +344,21 @@ describe("aggregations", () => {
       }),
     ).eq(birthday);
   });
+  it("matches a child's name embedded in a birthday title", () => {
+    const birthday = event({
+      event_type: "BIRTHDAY",
+      child_id: null,
+      title: "Geburtstag Rika",
+      age: 12,
+    });
+    expect(
+      findBirthdayForChild([birthday], {
+        id: 4,
+        name: "Rika",
+        default_responsible_user_id: null,
+      }),
+    ).eq(birthday);
+  });
   it("merges adjacent generated default stays but not explicit stays", () => {
     const first = event({
       id: null,

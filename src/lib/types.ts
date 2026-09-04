@@ -72,8 +72,8 @@ export interface CalendarEvent extends BaseCalendarEvent {
   custom_type_label?: string | null;
   all_day?: boolean;
   responsible_user_id?: number | null;
-  age?: number;
-  birth_date?: string;
+  age?: number | null;
+  birth_date?: string | null;
   source?: string;
   generated?: boolean;
   child_name?: string;

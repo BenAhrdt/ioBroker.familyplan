@@ -44,8 +44,8 @@ const eventSchema = z
     custom_type_label: z.string().nullable().optional(),
     all_day: z.boolean().optional(),
     responsible_user_id: z.number().int().nullable().optional(),
-    age: z.number().int().nonnegative().optional(),
-    birth_date: z.string().optional(),
+    age: z.number().int().nonnegative().nullable().optional(),
+    birth_date: z.string().nullable().optional(),
     source: z.string().optional(),
     generated: z.boolean().optional(),
   })

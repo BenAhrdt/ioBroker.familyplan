@@ -615,6 +615,7 @@ export class FamilienPlan extends utils.Adapter {
       // Trigger evaluation must run before the comparatively expensive object
       // projections so a due pulse is not delayed by large calendars.
       await this.processTriggers(this.events, current);
+      await this.writeChildrenFromEvents(this.childrenData, current);
       await this.writeEvents(this.events, current);
       await this.writeCurrentEvents(this.events, current);
       await this.writeTimeline(this.events, current);
@@ -750,6 +751,109 @@ export class FamilienPlan extends utils.Adapter {
       const remainder = id.slice("children.".length);
       if (!remainder.includes(".") && !currentRoots.has(id)) {
         await this.delObjectAsync(id, { recursive: true });
+      }
+    }
+  }
+
+  private childRoot(child: Child, children: Child[]): string {
+    const segments = stableSegments(children.map((item) => item.name));
+    const duplicates = children.filter(
+      (item) =>
+        item.name.toLocaleLowerCase() === child.name.toLocaleLowerCase(),
+    ).length;
+    const segment = segments.get(child.name)!;
+    return `children.${duplicates > 1 ? `${segment}_${child.id}` : segment}`;
+  }
+
+  /** Refresh projections which can change from the cached calendar alone. */
+  private async writeChildrenFromEvents(
+    children: Child[],
+    now: DateTime,
+  ): Promise<void> {
+    for (const child of children) {
+      const root = this.childRoot(child, children);
+      const birthday = this.findChildBirthday(child);
+      const apiBirthDate = this.childBirthDate(child);
+      const birthdayData = birthday
+        ? birthdayItem(birthday, now, this.cfg.timezone, "yyyy-MM-dd")
+        : undefined;
+      const birthDate = apiBirthDate
+        ? DateTime.fromISO(apiBirthDate).toFormat("yyyy-MM-dd")
+        : (birthdayData?.birthDate ?? "");
+      const parsedBirthDate = DateTime.fromISO(birthDate);
+      const age = parsedBirthDate.isValid
+        ? Math.floor(now.diff(parsedBirthDate, "years").years)
+        : typeof birthday?.age === "number"
+          ? birthday.age
+          : 0;
+      await this.writeFields(root, {
+        name: child.name,
+        birthDate,
+        age,
+        json: JSON.stringify({ name: child.name, birthDate, age }),
+      });
+
+      if (!this.cfg.fetchLocations) {
+        continue;
+      }
+      const stays = this.events
+        .filter(
+          (event) =>
+            event.event_type.toLocaleUpperCase() === "STAY" &&
+            event.child_id === child.id &&
+            DateTime.fromISO(event.ends_at).toMillis() > now.toMillis(),
+        )
+        .sort(
+          (a, b) =>
+            DateTime.fromISO(a.starts_at).toMillis() -
+            DateTime.fromISO(b.starts_at).toMillis(),
+        );
+      const active = stays.find((event) => isEventActive(event, now));
+      if (!active) {
+        continue;
+      }
+      const changes: CalendarEvent[] = [];
+      let previousName = this.responsibleName(active);
+      for (const stay of stays) {
+        if (DateTime.fromISO(stay.starts_at).toMillis() <= now.toMillis()) {
+          continue;
+        }
+        const name = this.responsibleName(stay);
+        if (name !== previousName) {
+          changes.push(stay);
+          previousName = name;
+        }
+      }
+      const lr = `${root}.location`;
+      const nextChangeAt = changes[0]?.starts_at ?? "";
+      const current = {
+        responsibleName: this.responsibleName(active),
+        nextChangeAt,
+        lastUpdated: now.toISO()!,
+      };
+      await this.writeFields(lr, { ...current, json: JSON.stringify(current) });
+      for (const [index, key, label] of [
+        [0, "next", "Nächste Betreuung"],
+        [1, "nextAfter", "Darauffolgende Betreuung"],
+      ] as const) {
+        const stay = changes[index];
+        await this.writeLocationForecast(
+          `${lr}.${key}`,
+          label,
+          stay
+            ? {
+                child_id: child.id,
+                at: stay.starts_at,
+                responsible_user_id: stay.responsible_user_id ?? null,
+                responsible_name: this.responsibleName(stay),
+                source: stay.source ?? "calendar",
+                current_until: stay.ends_at,
+                next_change_at: changes[index + 1]?.starts_at ?? null,
+              }
+            : undefined,
+          stay?.starts_at ?? "",
+          now,
+        );
       }
     }
   }

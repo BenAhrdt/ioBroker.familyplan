@@ -29,7 +29,16 @@ export function findBirthdayForChild(
       (event) =>
         normalizedPersonName(event.title ?? "") ===
         normalizedPersonName(child.name),
-    )
+    ) ??
+    birthdays.find((event) => {
+      const title = normalizedPersonName(event.title ?? "");
+      const name = normalizedPersonName(child.name);
+      return (
+        title.startsWith(`${name} `) ||
+        title.endsWith(` ${name}`) ||
+        title.includes(` ${name} `)
+      );
+    })
   );
 }
 
