@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "familyplan",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "news": {
+      "0.1.3": {
+        "en": "Preserve calendar-event time-zone offsets when calculating trigger times.",
+        "de": "Bewahren Sie bei der Berechnung der Auslösezeiten Zeitzonenoffsets bei.",
+        "ru": "Сохраняйте смещение часовых поясов календарных событий при расчете времени срабатывания.",
+        "pt": "Preserve os desvios de fuso horário do calendário ao calcular os gatilhos.",
+        "nl": "Bewaar de tijdzoneverschuivingen tussen agendagebeurtenissen en gebeurtenissen bij het berekenen van de triggertijden.",
+        "fr": "Préservez les décalages horaires lors du calcul des temps de déclenchement.",
+        "it": "Preserva gli offset di fuso orario tra eventi e calendario nel calcolo dei trigger.",
+        "es": "Conserve los desfases horarios entre el calendario y los eventos al calcular",
+        "pl": "Podczas obliczania czasów wyzwalania zachowaj przesunięcia strefy czasowej zdarzeń kalendarza.",
+        "uk": "Зберігайте зміщення часового поясу календаря під час обчислення часу запуску.",
+        "zh-cn": "计算触发时间时保留日历事件时区偏移量。"
+      },
       "0.1.2": {
         "en": "Add per-rule active/reset trigger events and a shared JSON event stream for all trigger transitions.\nInclude appointment notes and child names in projected event data while omitting internal child IDs.\nBuild automatically for GitHub installations and fix unit-test discovery on Windows.",
         "de": "Fügen Sie Aktive/Reset-Trigger pro Regel und einen JSON-Eventstream für alle Triggerübergänge hinzu.\nNehmen Sie Terminnotizen und Kindernamen in die Eventdaten auf und lassen Sie interne IDs weg.\nBuild automatisch für GitHub und Fix Unittest Discovery unter Windows.",

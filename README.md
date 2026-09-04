@@ -136,8 +136,7 @@ npm run dev-server watch
 The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is stored below `.dev-server/` and is not published.
 
 ## Changelog
-
-### **WORK IN PROGRESS**
+### 0.1.3 (2026-09-04)
 
 - (BenAhrdt) Preserve calendar-event time-zone offsets when calculating trigger times.
 
