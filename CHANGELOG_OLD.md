@@ -2,6 +2,12 @@
 
 There are no older releases yet. Current release notes are maintained in the
 [README changelog](README.md#changelog).
+## 0.1.2 (2026-09-04)
+
+- (BenAhrdt) Add per-rule active/reset trigger events and a shared JSON event stream for all trigger transitions.
+- (BenAhrdt) Include appointment notes and child names in projected event data while omitting internal child IDs.
+- (BenAhrdt) Build automatically for GitHub installations and fix unit-test discovery on Windows.
+
 ## 0.1.1 (2026-09-04)
 
 - (BenAhrdt) Require Node.js 22 and Admin 8.0.11 or newer.

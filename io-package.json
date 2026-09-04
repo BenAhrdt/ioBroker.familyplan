@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "familyplan",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "news": {
+      "0.1.7": {
+        "en": "Add an optional responsible-person filter for `STAY` trigger rules so consecutive custody intervals for the same child do not both match an arrival rule.",
+        "de": "Fügen Sie optional den Filter „AUFENTHALT“ hinzu, sodass mehrere Sorgerechtsintervalle für dasselbe Kind keiner Anreiseregel entsprechen.",
+        "ru": "Добавьте дополнительный фильтр ответственных лиц для триггерных правил «STAY», чтобы интервалы между последовательными опеками над одним и тем же ребенком не соответствовали правилу прибытия.",
+        "pt": "Adicione um filtro opcional de responsável às regras de “PERMANECER” para que a guarda consecutiva da mesma criança não corresponda à regra de chegada.",
+        "nl": "Voeg een optioneel filter voor de verantwoordelijke persoon toe voor de activeringsregels voor `STAY`, zodat opeenvolgende voogdijintervallen voor hetzelfde kind niet beide overeenkomen met een aankomstregel.",
+        "fr": "Ajoutez un filtre de responsable pour les règles de déclenchement « STAY » afin que la garde d'un même enfant ne corresponde pas à la règle d'arrivée.",
+        "it": "Aggiunga un filtro opzionale per le regole «STAY» in modo che l'affidamento consecutivo dello stesso bambino non sia valido.",
+        "es": "Añada un filtro opcional de persona responsable para las reglas de estancia para que los intervalos de custodia consecutivos del mismo niño no coincidan con la regla de llegada.",
+        "pl": "Dodaj opcjonalny filtr dla osób odpowiedzialnych dla reguł wyzwalania „STAY”, aby kolejne okresy opieki dla tego samego dziecka nie były zgodne z zasadą przyjazdu.",
+        "uk": "Додайте додатковий фільтр відповідальної особи для правил запуску `STAY`, щоб послідовні інтервали опіки однієї дитини не відповідали правилу прибуття.",
+        "zh-cn": "为 “STAY” 触发规则添加一个可选的责任人筛选条件，这样同一个孩子的连续监护间隔就不会都与到达规则相匹配。"
+      },
       "0.1.6": {
         "en": "Recalculate child custody projections every minute from cached `STAY` events so `responsibleName`, `nextChangeAt`, `next`, and `nextAfter` advance without an API synchronization.\nAccept nullable birthday fields, match child names embedded in birthday titles, and keep the child age current from the derived birth date.",
         "de": "Berechnet Sorgerechtsprognosen jede Minute aus zwischengespeicherten `STAY`-Ereignissen neu, also `responsibleName`, `nextChangeAt`, `next` und `nextAfter` ohne API-Synchronisierung.\nAkzeptieren Sie nullfähige Felder, ordnen Sie Kindernamen in Geburtstagstiteln zu und achten Sie auf das Alter des Kindes.",
@@ -80,19 +93,6 @@
         "pl": "Wymagaj Node.js 22 i Admin 8.0.11 lub nowszego.\nDodaj oficjalny przepływ pracy testowe/wydania ioBroker i konfigurację skryptu release-script.\nDodaj zgodność z interfejsem API FamilienPlan 0.1.82 i używaj „event_type” w całym serwisie.\nDodaj stabilne generowane pozostania, scalanie obwiedni zakresu, projekcje zdarzeń, trwałe wyzwalacze i widoki administracyjne.",
         "uk": "Потрібні Node.js 22 та Адміністратор 8.0.11 або новіші.\nДодайте офіційний робочий процес тестування/випуску IObroker та конфігурацію сценарію випуску.\nДодайте сумісність з FamilienPlan API 0.1.82 і використовуйте `event_type` у всьому.\nДодайте стабільно згенеровані записи, злиття меж діапазону, проекції подій, постійні тригери та перегляди адміністрування.",
         "zh-cn": "需要 Node.js 22 和管理员 8.0.11 或更高版本。\n添加官方的 IOBroker 测试/发布工作流程和发布脚本配置。\n增加与 FamilienPlan API 0.1.82 的兼容性，并在整个过程中使用 `event_type`。\n添加稳定生成的停留时间、区间边界合并、事件预测、永久触发器和管理视图。"
-      },
-      "0.1.0": {
-        "en": "Initial release",
-        "de": "Erste Veröffentlichung",
-        "ru": "Первый выпуск",
-        "pt": "Versão inicial",
-        "nl": "Eerste uitgave",
-        "fr": "Première version",
-        "it": "Versione iniziale",
-        "es": "Versión inicial",
-        "pl": "Pierwsze wydanie",
-        "uk": "Перший випуск",
-        "zh-cn": "首次发布"
       }
     },
     "titleLang": {
