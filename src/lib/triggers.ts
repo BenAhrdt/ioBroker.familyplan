@@ -39,6 +39,7 @@ export function scheduledFor(
 ): DateTime {
   const base = DateTime.fromISO(
     rule.position.endsWith("Start") ? event.starts_at : event.ends_at,
+    { setZone: true },
   );
   const sign = rule.position.startsWith("before") ? -1 : 1;
   return base.plus({ [units[rule.unit]]: sign * Math.abs(rule.offset) });
