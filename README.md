@@ -21,7 +21,28 @@ This adapter imports calendar data from a [FamilienPlan](https://familienplan.be
 
 ## Configuration
 
-Create an integration API key for the FamilienPlan person whose permissions should be used. Enter the installation's base URL and the key in the adapter configuration, test the connection, save the settings, and start the instance.
+### Connect to the FamilienPlan API
+
+The adapter uses a read-only integration key belonging to a FamilienPlan person. The adapter always inherits that person's current permissions, so choose a person who is allowed to see every child and calendar entry that should be imported.
+
+Create the key in FamilienPlan:
+
+1. Sign in to your FamilienPlan installation with an account that can manage the required person.
+2. Open **People** (`Personen`) and edit the person whose permissions the adapter should use.
+3. Find the **API keys** section, enter a descriptive name such as `ioBroker`, and select **Create API key** (`API-Schlüssel erzeugen`).
+4. Copy the generated key immediately and store it securely. The complete key is shown only when it is created.
+5. Administrators can review or revoke active read-only keys under **Settings → Integrations → REST API keys** (`Einstellungen → Integrationen → REST-API-Schlüssel`).
+
+Configure ioBroker:
+
+1. Create or open an instance of the FamilienPlan adapter.
+2. Enter the public base URL of the FamilienPlan installation, for example `https://family.example.com`. Do not append `/api/v1` or an endpoint path.
+3. Paste the generated key into **API key**.
+4. Select the IANA time zone used for calendar evaluation, for example `Europe/Berlin`.
+5. Select **Test connection and permissions**. A successful result includes the detected API version.
+6. Save the configuration and start the instance. `info.connection` becomes `true` after the first successful synchronization.
+
+Treat the API key like a password. Do not include it in screenshots, issue reports, exported configurations, or logs. Revoking the key in FamilienPlan immediately prevents further synchronization. Permission changes made to its person apply to subsequent requests without creating a new key.
 
 The configuration contains the following groups:
 
@@ -57,7 +78,7 @@ familyplan.0
 ├── timeline             today, tomorrow, days_2, …
 ├── birthdays            Relative birthday groups
 ├── waste                Relative waste-collection groups
-└── triggers             Rule states, schedule, and persistent history
+└── triggers             Shared event, rule states, schedule, and persistent history
 ```
 
 FamilienPlan API 0.1.82 calendar objects use `event_type`; the former `type` property is deliberately ignored. Known types include `GENERAL`, `STAY`, `SCHOOL`, `SCHOOL_HOLIDAY`, `BIRTHDAY`, `PRIVATE`, `WASTE`, `CLEANING`, and `OTHER`. Additional API values are supported dynamically. `OTHER` is grouped further by its normalized `custom_type_label`; events without a label use `unknown`.
@@ -136,6 +157,11 @@ npm run dev-server watch
 The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is stored below `.dev-server/` and is not published.
 
 ## Changelog
+
+### **WORK IN PROGRESS**
+
+- (BenAhrdt) Expand the English documentation with step-by-step instructions for connecting ioBroker to the FamilienPlan API.
+
 ### 0.1.3 (2026-09-04)
 
 - (BenAhrdt) Preserve calendar-event time-zone offsets when calculating trigger times.
