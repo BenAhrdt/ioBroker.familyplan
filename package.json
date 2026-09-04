@@ -1,6 +1,6 @@
 {
   "name": "iobroker.familyplan",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "FamilienPlan calendar integration for ioBroker",
   "author": {
     "name": "Ben Schmidt",

@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "familyplan",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "news": {
+      "0.1.4": {
+        "en": "Expand the English documentation with step-by-step instructions for connecting ioBroker to the FamilienPlan API.",
+        "de": "Erweitere die englische Dokumentation mit schrittweisen Anleitungen zur Anbindung von ioBroker an die FamilienPlan API.",
+        "ru": "Дополните английскую документацию пошаговыми инструкциями по подключению IOBroker к API FamilienPlan.",
+        "pt": "Expanda a documentação em inglês com instruções para conectar o IOBroker à API FamilienPlan.",
+        "nl": "Breid de Engelse documentatie uit met stapsgewijze instructies voor het koppelen van ioBroker aan de FamilienPlan API.",
+        "fr": "Complétez la documentation en anglais avec des instructions étape par étape pour connecter IObroker à l'API FamilienPlan.",
+        "it": "Espandi la documentazione in inglese con istruzioni dettagliate per connettere IObroker all'API FamilienPlan.",
+        "es": "Amplíe la documentación en inglés con instrucciones paso a paso para conectar ioBroker a la API FamilienPlan.",
+        "pl": "Rozwiń dokumentację w języku angielskim o instrukcje krok po kroku dotyczące podłączania iOBroker do interfejsu API FamilienPlan.",
+        "uk": "Розгорніть англійську документацію з покроковими інструкціями щодо підключення IObroker до API FamilienPlan.",
+        "zh-cn": "扩展英文文档，提供将 IOBroker 连接到 FamilienPlan API 的分步说明。"
+      },
       "0.1.3": {
         "en": "Preserve calendar-event time-zone offsets when calculating trigger times.",
         "de": "Bewahren Sie bei der Berechnung der Auslösezeiten Zeitzonenoffsets bei.",
