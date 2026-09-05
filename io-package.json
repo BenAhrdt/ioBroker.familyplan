@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "familyplan",
-    "version": "0.1.10",
+    "version": "0.1.11",
     "news": {
+      "0.1.11": {
+        "en": "Support FamilienPlan 0.1.100 birthday names and birth dates, prefer full names, and preserve original titles and all source fields.\nKeep missing birthday dates and ages unknown without inferring birth years; use server-provided annual occurrences and leap-day dates for birthday summaries.",
+        "de": "Unterstützt FamilienPlan 0.1.100 Namen und Daten, bevorzugt vollständige Namen und bewahrt Originaltitel und Quellfelder.\nLassen Sie unbekannte Geburtstage und Alter ohne Rückschluss auf Geburtsjahre aus; nutzen Sie Serverdaten für Jahreszahlen und Schalttage.",
+        "ru": "Поддерживайте имена и даты рождения FamilienPlan 0.1.100, предпочитайте полные имена и сохраняйте оригинальные заголовки и все исходные поля.\nСохраняйте пропущенные даты и возраст неизвестными, не указывая годы рождения; используйте годовые данные о днях рождения и високосные даты, предоставляемые сервером.",
+        "pt": "Apoie nomes e datas de nascimento do FamilienPlan 0.1.100, prefira nomes completos e preserve títulos originais e campos de origem.\nEsqueça datas de aniversário e idades sem inferir anos de nascimento; use ocorrências anuais e dias bissextos fornecidos pelo servidor.",
+        "nl": "Ondersteun FamilienPlan 0.1.100 verjaardagsnamen en geboortedata, geef de voorkeur aan volledige namen en behoud de originele titels en alle bronvelden.\nBlijf ontbrekende verjaardagen en leeftijden onbekend zonder geboortejaren af te leiden; gebruik jaarlijkse gebeurtenissen en schrikkeldagen voor overzichten van verjaardagen die door de server worden verstrekt.",
+        "fr": "Soutenez les noms et dates de naissance de FamilienPlan 0.1.100, préférez les noms complets et conservez les titres originaux et les champs sources.\nSurveillez les dates et âges manquants sans en déduire les années de naissance ; utilisez les occurrences annuelles fournies par le serveur et les dates bissextiles pour les résumés.",
+        "it": "Sostenga FamilienPlan 0.1.100 nomi e date di nascita, preferisca nomi completi e conservi i titoli originali e i campi sorgente.\nMetta da parte le date e le età sconosciute senza dedurne gli anni di nascita; usi le ricorrenze annuali e bisestili fornite dal server per i riepiloghi.",
+        "es": "Soporta nombres de cumpleaños y fechas de nacimiento de FamilienPlan 0.1.100, prefiere nombres completos y conserva los títulos originales y todos los campos fuente.\nSiga omitiendo fechas de cumpleaños y edades desconocidas sin deducir el año de nacimiento; utilice fechas anuales y bisiestas del servidor para resumir los cumpleaños.",
+        "pl": "Wsparcie FamilienPlan 0.1.100 imion urodzin i daty urodzenia, preferuj pełne imiona i zachowaj oryginalne tytuły i wszystkie pola źródłowe.\nZachowaj nieznane brakujące daty urodzin i wiek bez wywnioskowania lat urodzenia; do podsumowań urodzin używaj dostarczonych przez serwer rocznych zdarzeń i dat skoku dnia.",
+        "uk": "Підтримуйте FamilienPlan 0.1.100 імена та дати народження, віддайте перевагу повним іменам та збережіть оригінальні назви та всі поля джерела.\nЗберігайте пропущені дати та вік днів народження невідомими, не визначаючи років народження; використовуйте щорічні події та дати стрибків, надані сервером, для підсумків днів народження.",
+        "zh-cn": "支持 FamilienPlan 0.1.100 的生日名字和出生日期，首选全名，保留原始标题和所有来源字段。\n在不推断出生年份的情况下，对遗漏的生日日期和年龄保持未知状态；使用服务器提供的年发生率和闰日日期来获取生日摘要。"
+      },
       "0.1.10": {
         "en": "Add configurable waste reminders with combined collection messages, persistent acknowledgement, and automatic expiry.\nSort birthday summaries by the next anniversary without negative day counts and add combined messages and nearest-day person arrays.\nDisplay child birth dates and current ages and replace the default responsible user ID with the resolved name in child JSON.\nSupport FamilienPlan 0.1.99 child and person birthdays, string IDs, annual occurrences, and leap-day handling while retaining compatibility with older responses.",
         "de": "Fügen Sie Müllerinnerungen mit Sammelmeldungen, ständiger Bestätigung und automatischem Ablauf hinzu.\nSortiere Geburtstage ohne negative Tageszahlen nach dem nächsten Jahrestag und füge Nachrichten und Personenfelder hinzu.\nZeigt Geburtsdatum und Alter an und ersetzt die Standard-Nutzerkennung durch den aufgelösten Namen in Kind-JSON.\nUnterstützen Sie FamilienPlan 0.1.99 Kinder- und Personengeburtstage, String-IDs, Jahreszahlen und Schalttage, aber kompatibel mit älteren Antworten.",
@@ -80,19 +93,6 @@
         "pl": "Napraw rzuty położenia podrzędnego, wykonując zapytanie o bieżący punkt w czasie i usuwając wygasłe wartości `nextChangEat`.\nWypełnij stany „Data urodzenia” i „wiek” dziecka bardziej wiarygodnie, dopasowując wydarzenia urodzinowe za pomocą identyfikatorów lub imion dziecka i wyprowadzając wiek z daty urodzenia, jeśli to konieczne.",
         "uk": "Виправте проекції дочірнього розташування, запитуючи поточну точку часу та придушуючи значення `NextChangeAT`, що закінчилися.\nНаповнюйте стани «Дата народження» та «вік» дитини надійніше, зіставляючи події дня народження за допомогою ідентифікаторів або імен дитини та виводячи вік з дати народження, коли це необхідно.",
         "zh-cn": "通过查询当前时间点和隐藏过期的 `nextChangeat`值来修复孩子的位置预测。\n通过孩子 ID 或姓名匹配生日事件，并在必要时从出生日期推导年龄，从而更可靠地填充孩子 “出生日期” 和 “年龄” 状态。"
-      },
-      "0.1.4": {
-        "en": "Expand the English documentation with step-by-step instructions for connecting ioBroker to the FamilienPlan API.",
-        "de": "Erweitere die englische Dokumentation mit schrittweisen Anleitungen zur Anbindung von ioBroker an die FamilienPlan API.",
-        "ru": "Дополните английскую документацию пошаговыми инструкциями по подключению IOBroker к API FamilienPlan.",
-        "pt": "Expanda a documentação em inglês com instruções para conectar o IOBroker à API FamilienPlan.",
-        "nl": "Breid de Engelse documentatie uit met stapsgewijze instructies voor het koppelen van ioBroker aan de FamilienPlan API.",
-        "fr": "Complétez la documentation en anglais avec des instructions étape par étape pour connecter IObroker à l'API FamilienPlan.",
-        "it": "Espandi la documentazione in inglese con istruzioni dettagliate per connettere IObroker all'API FamilienPlan.",
-        "es": "Amplíe la documentación en inglés con instrucciones paso a paso para conectar ioBroker a la API FamilienPlan.",
-        "pl": "Rozwiń dokumentację w języku angielskim o instrukcje krok po kroku dotyczące podłączania iOBroker do interfejsu API FamilienPlan.",
-        "uk": "Розгорніть англійську документацію з покроковими інструкціями щодо підключення IObroker до API FamilienPlan.",
-        "zh-cn": "扩展英文文档，提供将 IOBroker 连接到 FamilienPlan API 的分步说明。"
       }
     },
     "titleLang": {

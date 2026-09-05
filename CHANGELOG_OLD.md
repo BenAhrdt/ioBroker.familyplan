@@ -2,6 +2,11 @@
 
 There are no older releases yet. Current release notes are maintained in the
 [README changelog](README.md#changelog).
+## 0.1.6 (2026-09-04)
+
+- (BenAhrdt) Recalculate child custody projections every minute from cached `STAY` events so `responsibleName`, `nextChangeAt`, `next`, and `nextAfter` advance without an API synchronization.
+- (BenAhrdt) Accept nullable birthday fields, match child names embedded in birthday titles, and keep the child age current from the derived birth date.
+
 ## 0.1.5 (2026-09-04)
 
 - (BenAhrdt) Fix child location projections by querying the current point in time and suppressing expired `nextChangeAt` values.

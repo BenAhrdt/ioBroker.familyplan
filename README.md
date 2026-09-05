@@ -180,7 +180,7 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
-### **WORK IN PROGRESS**
+### 0.1.11 (2026-09-05)
 
 - (BenAhrdt) Support FamilienPlan 0.1.100 birthday names and birth dates, prefer full names, and preserve original titles and all source fields.
 - (BenAhrdt) Keep missing birthday dates and ages unknown without inferring birth years; use server-provided annual occurrences and leap-day dates for birthday summaries.
@@ -208,11 +208,6 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
 ### 0.1.7 (2026-09-04)
 
 - (BenAhrdt) Add an optional responsible-person filter for `STAY` trigger rules so consecutive custody intervals for the same child do not both match an arrival rule.
-
-### 0.1.6 (2026-09-04)
-
-- (BenAhrdt) Recalculate child custody projections every minute from cached `STAY` events so `responsibleName`, `nextChangeAt`, `next`, and `nextAfter` advance without an API synchronization.
-- (BenAhrdt) Accept nullable birthday fields, match child names embedded in birthday titles, and keep the child age current from the derived birth date.
 
 Older changes are available in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 
