@@ -18,7 +18,13 @@ import {
   wasteItem,
 } from "./lib/aggregation";
 import { eventFolder, normalizeId, stableSegments } from "./lib/ids";
-import { dueTriggers, futureTriggers, ruleMatches } from "./lib/triggers";
+import {
+  catchUpWindowSeconds,
+  dueTriggers,
+  futureTriggers,
+  ruleMatches,
+  triggerIsActive,
+} from "./lib/triggers";
 import { parseEvents } from "./lib/validation";
 import type {
   AdapterConfigShape,
@@ -48,6 +54,7 @@ export class FamilienPlan extends utils.Adapter {
   private triggerHistory?: Record<string, string>;
   private lastTriggerCheck?: DateTime;
   private lastTriggerCheckPersistedAt?: DateTime;
+  private readonly triggerResets = new Set<string>();
   private readonly triggerCounts = new Map<string, number>();
   private readonly triggerLastTriggered = new Map<string, DateTime>();
 
@@ -76,6 +83,7 @@ export class FamilienPlan extends utils.Adapter {
       "",
     );
     this.subscribeStates("control.refresh");
+    this.subscribeStates("triggers.*.reset");
     if (!this.cfg.baseUrl?.trim() || !this.cfg.apiKey?.trim()) {
       await this.cleanupNeverConfiguredObjects();
       await this.setStateAsync("info.lastError", "", true);
@@ -108,6 +116,27 @@ export class FamilienPlan extends utils.Adapter {
     id: string,
     state: ioBroker.State | null | undefined,
   ): Promise<void> {
+    const resetPrefix = `${this.namespace}.triggers.`;
+    if (
+      id.startsWith(resetPrefix) &&
+      id.endsWith(".reset") &&
+      state?.val === true &&
+      !state.ack
+    ) {
+      const root = id.slice(this.namespace.length + 1, -".reset".length);
+      if (
+        !root.slice("triggers.".length).includes(".") &&
+        (await this.getObjectAsync(`${root}.reset`))
+      ) {
+        this.triggerResets.add(root);
+        await this.setStateAsync(`${root}.reset`, false, true);
+        await this.processTriggers(
+          this.events,
+          DateTime.now().setZone(this.cfg.timezone || "Europe/Berlin"),
+        );
+      }
+      return;
+    }
     if (
       id === `${this.namespace}.control.refresh` &&
       state &&
@@ -1379,10 +1408,11 @@ export class FamilienPlan extends utils.Adapter {
           childName: rule.childName?.trim() || undefined,
           responsibleName: rule.responsibleName?.trim() || undefined,
           catchUpSeconds:
-            rule.catchUpSeconds ??
-            (legacy.catchUpMinutes !== undefined
-              ? legacy.catchUpMinutes * 60
-              : 60),
+            rule.catchUpSeconds !== undefined
+              ? rule.catchUpSeconds
+              : legacy.catchUpMinutes !== undefined
+                ? legacy.catchUpMinutes * 60
+                : 60,
         };
       })
       .filter((rule) => Boolean(rule.name));
@@ -1413,10 +1443,7 @@ export class FamilienPlan extends utils.Adapter {
       this.lastTriggerCheck = parsedLast.isValid
         ? parsedLast
         : now.minus({
-            seconds: Math.max(
-              ...rules.map((rule) => rule.catchUpSeconds ?? 60),
-              60,
-            ),
+            seconds: Math.max(...rules.map(catchUpWindowSeconds), 60),
           });
     }
     const last = this.lastTriggerCheck;
@@ -1495,14 +1522,25 @@ export class FamilienPlan extends utils.Adapter {
         );
         this.triggerLastTriggered.set(root, lastTriggered);
       }
-      const active =
-        rule.enabled &&
-        lastTriggered.isValid &&
-        now <
-          lastTriggered.plus({
-            seconds: Math.max(0, rule.catchUpSeconds ?? 60),
-          });
       const activeState = await this.getStateAsync(`${root}.active`);
+      const active = triggerIsActive(
+        rule,
+        lastTriggered,
+        now,
+        activeState?.val === true,
+        this.triggerResets.delete(root),
+      );
+      await this.ensureState(
+        `${root}.reset`,
+        "Trigger zurücksetzen",
+        "boolean",
+        "button",
+        true,
+        false,
+      );
+      if (!(await this.getStateAsync(`${root}.reset`))) {
+        await this.setStateAsync(`${root}.reset`, false, true);
+      }
       if (activeState?.val === true && !active) {
         const eventState = await this.getStateAsync(`${root}.event`);
         try {
@@ -1533,7 +1571,10 @@ export class FamilienPlan extends utils.Adapter {
         !oldRoot.slice("triggers.".length).includes(".") &&
         !currentRuleRoots.has(oldRoot)
       ) {
-        await this.delObjectAsync(oldRoot, { recursive: true });
+        await this.deleteEventGroup(oldRoot);
+        this.triggerCounts.delete(oldRoot);
+        this.triggerLastTriggered.delete(oldRoot);
+        this.triggerResets.delete(oldRoot);
       }
     }
     const cutoff = now.minus({

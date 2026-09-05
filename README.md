@@ -113,7 +113,11 @@ Custody entries use `event_type=STAY`. Explicit entries have an ID and `source=s
 
 Supported positions are `beforeStart`, `afterStart`, `beforeEnd`, and `afterEnd`; offsets may use seconds, minutes, hours, or days. Rules filter directly by `event_type`. The `custom_type_label` filter applies only to `OTHER`. Child-name and responsible-person matching are case-insensitive. The optional responsible-person filter is especially useful for `STAY` rules, where the end of one household's interval is usually the beginning of the next household's interval.
 
-The catch-up/pulse duration defines both how long `active` remains true and how long a missed trigger may be fired late. A persistent SHA-256 key made from the rule, event type, event key, start/end, position, and offset prevents duplicate triggers after a restart.
+Trigger rules are edited in expandable forms, grouped into event filters, firing time, trigger length, and catch-up settings. Optional title and description filters each support **Matches exactly** or **Contains**. All configured filters must match; empty filters match every event, and text matching ignores case and surrounding whitespace. Description filters use the API `description`, with a legacy `note` fallback only when `description` is absent.
+
+**Trigger length** controls how long `active` remains true after an actual firing. Choose seconds, minutes, hours, or days (a day is 24 hours). Leaving the length empty keeps the trigger active until it is reset manually or its rule is disabled. Write `true` without acknowledgement to `triggers.<rule-id>.reset` to reset it; this button also works for finite lengths. Active state and manual resets survive adapter restarts. Further firings while active still increment `count` and update `event`; each firing starts a new finite duration.
+
+The separate **Catch-up window (seconds)** limits how late a missed scheduled time may be fired, defaulting to 60 seconds for new rules. An unlimited trigger length does not mean unlimited catch-up. Existing rules keep their previous length and catch-up behavior until edited. Internally, the length retains the legacy `catchUpSeconds` configuration key, interpreted using `lengthUnit`; `catchUpWindowSeconds` stores the separate catch-up window. A persistent SHA-256 key made from the rule, event type, event key, start/end, position, and offset prevents duplicate triggers after a restart.
 
 For robust automation, react to the monotonic `triggers.<rule-id>.count` state. Each rule has an `active` state. Its `event` JSON is written both when the trigger becomes active and when it is reset; the payload's `active` property identifies the transition. `triggers.event` receives these transitions from every rule as a common event stream. Event JSON preserves all API fields, including `child_id`, and adds `child_name` when available. API titles are preserved. `description` contains the API description, falls back to legacy `note` only when `description` is absent, and is `null` when neither is supplied. Birthday and waste JSON summaries also include the full event alongside their summary fields. `lastTriggered`, `lastEventId`, and `scheduledFor` provide additional context.
 
@@ -174,6 +178,13 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+
+### **WORK IN PROGRESS**
+
+- (BenAhrdt) Redesign configuration pages with grouped sections and expandable trigger rules.
+- (BenAhrdt) Add exact/contains title and description filters, selectable trigger-length units, and a separate catch-up window.
+- (BenAhrdt) Support unlimited trigger lengths with persistent active state and a manual reset button per rule.
+
 ### 0.1.8 (2026-09-05)
 
 - (BenAhrdt) Adapt event descriptions to FamilienPlan 0.1.95, preserve API titles and complete event JSON, and clear removed notes.

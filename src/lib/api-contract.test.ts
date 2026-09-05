@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { DateTime } from "luxon";
 import type {} from "./adapter-config";
 import type * as AdapterModule from "../main";
-import type { CalendarEvent, Child } from "./types";
+import type { CalendarEvent, Child, TriggerRule } from "./types";
 import { nextLocationChange, uniqueOccurrences } from "./aggregation";
 import { parseEvents, parseChildren } from "./validation";
 
@@ -20,6 +20,10 @@ if (originalCore) {
 
 type Value = string | number | boolean | null;
 interface ProjectionAdapter {
+  config: { triggerRules: TriggerRule[] };
+  triggerResets: Set<string>;
+  processTriggers(events: CalendarEvent[], now: DateTime): Promise<void>;
+  onStateChange(id: string, state: Partial<ioBroker.State>): Promise<void>;
   events: CalendarEvent[];
   childrenData: Child[];
   childBirthdayEvents: CalendarEvent[];
@@ -39,20 +43,35 @@ const stay: CalendarEvent = {
   source: "stay",
   generated: false,
 };
-function harness(): { adapter: ProjectionAdapter; states: Map<string, Value> } {
-  const states = new Map<string, Value>();
+function harness(states = new Map<string, Value>()): {
+  adapter: ProjectionAdapter;
+  states: Map<string, Value>;
+} {
   const objects = new Map<string, { type: string }>();
   const adapter = Object.assign(Object.create(FamilienPlan.prototype), {
     config: {
       timezone: "Europe/Berlin",
       dateFormat: "dd.MM.yyyy",
       fetchLocations: false,
+      triggerRules: [],
+      triggerHistoryDays: 90,
     },
     childrenData: parseChildren([
       { id: 1, name: "Emma", default_responsible_user_id: null },
     ]),
     childBirthdayEvents: [],
     events: [],
+    namespace: "familyplan.0",
+    triggerResets: new Set(),
+    triggerCounts: new Map(),
+    triggerLastTriggered: new Map(),
+    log: {
+      warn: (message: string) => {
+        throw new Error(message);
+      },
+    },
+    getStateAsync: async (id: string) =>
+      states.has(id) ? { val: states.get(id) } : null,
     writtenStates: new Map(),
     responsibleNames: new Map(),
     stayResponsibleNames: new Map(),
@@ -213,5 +232,117 @@ describe("FamilienPlan 0.1.95 API contract", () => {
     expect(
       nextLocationChange({ current_until: null, next_change_at: null }, now),
     ).eq("");
+  });
+});
+
+describe("Trigger lifecycle", () => {
+  const firedAt = DateTime.fromISO(stay.starts_at);
+  const rule: TriggerRule = {
+    name: "Ankunft",
+    enabled: true,
+    position: "afterStart",
+    offset: 0,
+    unit: "seconds",
+    catchUpSeconds: "",
+    lengthUnit: "seconds",
+    catchUpWindowSeconds: 60,
+  };
+  it("keeps an unlimited trigger active after restart and updates later firings", async () => {
+    const first = harness();
+    first.adapter.config.triggerRules = [rule];
+    await first.adapter.processTriggers([stay], firedAt);
+    expect(first.states.get("triggers.ankunft.active")).eq(true);
+    expect(first.states.get("triggers.ankunft.count")).eq(1);
+    const restarted = harness(first.states);
+    restarted.adapter.config.triggerRules = [rule];
+    await restarted.adapter.processTriggers([stay], firedAt.plus({ days: 2 }));
+    expect(first.states.get("triggers.ankunft.active")).eq(true);
+    expect(first.states.get("triggers.ankunft.count")).eq(1);
+    const later = {
+      ...stay,
+      id: 43,
+      starts_at: firedAt.plus({ days: 3 }).toISO()!,
+      ends_at: firedAt.plus({ days: 3, hours: 1 }).toISO()!,
+    };
+    await restarted.adapter.processTriggers([later], firedAt.plus({ days: 3 }));
+    expect(first.states.get("triggers.ankunft.count")).eq(2);
+    expect(
+      JSON.parse(String(first.states.get("triggers.ankunft.event"))).event.id,
+    ).eq(43);
+  });
+  it("resets manually, publishes the reset and remains inactive across restart", async () => {
+    const { adapter, states } = harness();
+    adapter.config.triggerRules = [rule];
+    await adapter.processTriggers([stay], firedAt);
+    await adapter.onStateChange("familyplan.0.triggers.ankunft.reset", {
+      val: true,
+      ack: false,
+    });
+    expect(states.get("triggers.ankunft.active")).eq(false);
+    expect(states.get("triggers.ankunft.reset")).eq(false);
+    expect(JSON.parse(String(states.get("triggers.ankunft.event"))).active).eq(
+      false,
+    );
+    expect(JSON.parse(String(states.get("triggers.event"))).active).eq(false);
+    const restarted = harness(states);
+    restarted.adapter.config.triggerRules = [rule];
+    await restarted.adapter.processTriggers([], firedAt.plus({ days: 2 }));
+    expect(states.get("triggers.ankunft.active")).eq(false);
+  });
+  it("expires a finite trigger independently of catch-up and does not reactivate after a manual reset", async () => {
+    const { adapter, states } = harness();
+    adapter.config.triggerRules = [
+      {
+        ...rule,
+        catchUpSeconds: 2,
+        lengthUnit: "minutes",
+        catchUpWindowSeconds: 10,
+      },
+    ];
+    await adapter.processTriggers([stay], firedAt);
+    await adapter.processTriggers([stay], firedAt.plus({ seconds: 119 }));
+    expect(states.get("triggers.ankunft.active")).eq(true);
+    await adapter.processTriggers([stay], firedAt.plus({ seconds: 120 }));
+    expect(states.get("triggers.ankunft.active")).eq(false);
+    expect(JSON.parse(String(states.get("triggers.ankunft.event"))).active).eq(
+      false,
+    );
+    const later = {
+      ...stay,
+      id: 43,
+      starts_at: firedAt.plus({ hours: 1 }).toISO()!,
+      ends_at: firedAt.plus({ hours: 2 }).toISO()!,
+    };
+    await adapter.processTriggers([later], firedAt.plus({ hours: 1 }));
+    adapter.triggerResets.add("triggers.ankunft");
+    await adapter.processTriggers(
+      [later],
+      firedAt.plus({ hours: 1, seconds: 10 }),
+    );
+    await adapter.processTriggers(
+      [later],
+      firedAt.plus({ hours: 1, seconds: 11 }),
+    );
+    expect(states.get("triggers.ankunft.active")).eq(false);
+  });
+  it("removes deleted rules and recreates their states without retaining a latched value", async () => {
+    const { adapter, states } = harness();
+    adapter.config.triggerRules = [rule];
+    await adapter.processTriggers([stay], firedAt);
+    adapter.config.triggerRules = [];
+    await adapter.processTriggers([], firedAt.plus({ seconds: 1 }));
+    expect(states.has("triggers.ankunft.active")).eq(false);
+    adapter.config.triggerRules = [rule];
+    await adapter.processTriggers([], firedAt.plus({ seconds: 2 }));
+    expect(states.get("triggers.ankunft.active")).eq(false);
+    expect(states.get("triggers.ankunft.count")).eq(0);
+  });
+  it("clears a latched trigger when its rule is disabled", async () => {
+    const { adapter, states } = harness();
+    adapter.config.triggerRules = [rule];
+    await adapter.processTriggers([stay], firedAt);
+    adapter.config.triggerRules = [{ ...rule, enabled: false }];
+    await adapter.processTriggers([stay], firedAt.plus({ seconds: 1 }));
+    expect(states.get("triggers.ankunft.active")).eq(false);
   });
 });

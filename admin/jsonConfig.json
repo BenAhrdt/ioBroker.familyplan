@@ -1,50 +1,1571 @@
 {
-  "$schema":"https://raw.githubusercontent.com/ioBroker/ioBroker.admin/master/packages/jsonConfig/schemas/jsonConfig.json",
-  "i18n":true,
-  "type":"tabs",
-  "items":{
-    "connection":{"type":"panel","label":{"de":"Verbindung","en":"Connection"},"items":{
-      "baseUrl":{"type":"text","label":{"de":"FamilienPlan-Basis-URL","en":"FamilienPlan base URL"},"sm":8,"validator":"!data.baseUrl || /^https?:\\/\\//.test(data.baseUrl)","validatorErrorText":"Bitte eine gültige HTTP- oder HTTPS-URL eingeben.","validatorNoSaveOnError":true},
-      "apiKey":{"type":"password","label":{"de":"API-Schlüssel","en":"API key"},"sm":4,"newLine":true},
-      "test":{"type":"sendTo","label":{"de":"Verbindung und Berechtigungen testen","en":"Test connection and permissions"},"command":"testConnection","jsonData":"{\"baseUrl\":\"${data.baseUrl}\",\"apiKey\":\"${data.apiKey}\",\"timezone\":\"${data.timezone}\",\"httpTimeout\":${data.httpTimeout},\"verifySsl\":${data.verifySsl},\"pastDays\":${data.pastDays},\"futureDays\":${data.futureDays},\"rangePeriod\":\"${data.rangePeriod}\",\"childIds\":\"${data.childIds}\"}","showProcess":true,"timeout":30000,"variant":"contained","newLine":true,"sm":4},
-      "timezone":{"type":"text","label":{"de":"Zeitzone","en":"Time zone"},"default":"Europe/Berlin","sm":4},
-      "httpTimeout":{"type":"number","label":{"de":"HTTP-Timeout (ms)","en":"HTTP timeout (ms)"},"min":1000,"max":120000,"sm":4},
-      "verifySsl":{"type":"checkbox","label":{"de":"SSL-Zertifikat prüfen","en":"Verify SSL certificate"},"help":{"de":"Deaktivieren ist unsicher und erzeugt eine Warnung im Log.","en":"Disabling is insecure and creates a log warning."},"sm":4}
-    }},
-    "polling":{"type":"panel","label":{"de":"Abruf","en":"Polling"},"items":{
-      "rangePeriod":{"type":"select","label":{"de":"Zeitraum","en":"Period"},"options":[{"label":{"de":"Diese Woche","en":"This week"},"value":"week"},{"label":{"de":"Dieser Monat","en":"This month"},"value":"month"},{"label":{"de":"Dieses Quartal","en":"This quarter"},"value":"quarter"},{"label":{"de":"Dieses Jahr","en":"This year"},"value":"year"}],"default":"year","sm":3},
-      "pastDays":{"type":"number","label":{"de":"Vorherige Tage","en":"Previous days"},"help":{"de":"Erweitert den gewählten Zeitraum vor dessen Beginn.","en":"Extends the selected period before its start."},"min":0,"max":365,"default":31,"sm":3},
-      "futureDays":{"type":"number","label":{"de":"Nachfolgende Tage","en":"Following days"},"help":{"de":"Erweitert den gewählten Zeitraum nach dessen Ende.","en":"Extends the selected period after its end."},"min":0,"max":365,"default":31,"sm":3},
-      "pollInterval":{"type":"number","label":{"de":"Intervall (Minuten)","en":"Interval (minutes)"},"min":1,"sm":3},
-      "eventRetentionDays":{"type":"number","label":{"de":"Objekt-Aufbewahrung (Tage)","en":"Object retention (days)"},"help":{"de":"So lange bleiben Einzelobjekte erhalten, nachdem sie nicht mehr von der API geliefert wurden. Sie werden sofort inaktiv und erst nach dieser Frist gelöscht.","en":"How long individual objects remain after the API no longer returns them. They become inactive immediately and are deleted after this period."},"min":0,"sm":3},
-      "retryCount":{"type":"number","label":{"de":"Wiederholungsversuche","en":"Retries"},"min":0,"max":10,"newLine":true,"sm":3},
-      "retryBackoff":{"type":"number","label":{"de":"Backoff-Basis (ms)","en":"Backoff base (ms)"},"min":100,"sm":3},
-      "childIds":{"type":"text","label":{"de":"Kind-IDs (kommagetrennt, leer = alle)","en":"Child IDs (comma-separated, blank = all)"},"help":{"de":"Optional auf bestimmte Kinder einschränken. Leer lädt die freigegebenen Kalenderdaten aller Kinder.","en":"Optionally restrict the query to specific children. Empty loads permitted calendar data for all children."},"sm":3},
-      "fetchLocations":{"type":"checkbox","label":{"de":"Aufenthalts-/Betreuungsstatus abrufen","en":"Fetch custody/location status"},"help":{"de":"Lädt je Kind die aktuell verantwortliche Person, Quelle, Gültigkeit und den nächsten Wechsel. Es werden keine GPS-Koordinaten abgerufen.","en":"Loads the currently responsible person, source, validity and next change for each child. No GPS coordinates are retrieved."},"sm":3}
-    }},
-    "timeline":{"type":"panel","label":"Timeline","items":{
-      "timelineEnabled":{"type":"checkbox","label":{"de":"Aktiviert","en":"Enabled"},"sm":3},"timelineDays":{"type":"number","label":{"de":"Tage","en":"Days"},"min":1,"max":366,"sm":3},
-      "timelineTypes":{"type":"text","label":{"de":"Typen (kommagetrennt, leer = alle)","en":"Types (comma-separated, blank = all)"},"sm":6},
-      "timelineTemplate":{"type":"text","label":{"de":"Eintragsvorlage","en":"Entry template"},"help":"{title}, {time}, {date}, {type}","newLine":true,"sm":6},
-      "timelineSeparator":{"type":"text","label":{"de":"Trennzeichen","en":"Separator"},"sm":2},"timeFormat":{"type":"text","label":{"de":"Zeitformat","en":"Time format"},"sm":2},"dateFormat":{"type":"text","label":{"de":"Datumsformat","en":"Date format"},"sm":2}
-    }},
-    "birthdays":{"type":"panel","label":{"de":"Geburtstage","en":"Birthdays"},"items":{
-      "birthdaysEnabled":{"type":"checkbox","label":{"de":"Aktiviert","en":"Enabled"},"sm":3},"birthdayDateFormat":{"type":"text","label":{"de":"Datumsformat","en":"Date format"},"sm":3},"birthdaySeparator":{"type":"text","label":{"de":"Trennzeichen","en":"Separator"},"sm":3},
-      "birthdayTodayTemplate":{"type":"text","label":{"de":"Vorlage heute","en":"Today template"},"newLine":true,"sm":6},"birthdayTomorrowTemplate":{"type":"text","label":{"de":"Vorlage morgen","en":"Tomorrow template"},"sm":6},"birthdayFutureTemplate":{"type":"text","label":{"de":"Vorlage weitere Tage","en":"Future template"},"newLine":true,"sm":6},"birthdayEmptyText":{"type":"text","label":{"de":"Leertext","en":"Empty text"},"sm":6}
-    }},
-    "waste":{"type":"panel","label":{"de":"Abfall","en":"Waste"},"items":{
-      "wasteEnabled":{"type":"checkbox","label":{"de":"Aktiviert","en":"Enabled"},"sm":3},
-      "wasteTodayTemplate":{"type":"text","label":{"de":"Vorlage heute","en":"Today template"},"newLine":true,"sm":6},"wasteTomorrowTemplate":{"type":"text","label":{"de":"Vorlage morgen","en":"Tomorrow template"},"sm":6},"wasteFutureTemplate":{"type":"text","label":{"de":"Vorlage weitere Tage","en":"Future template"},"newLine":true,"sm":6},"wasteSeparator":{"type":"text","label":{"de":"Trennzeichen","en":"Separator"},"sm":3},"wasteEmptyText":{"type":"text","label":{"de":"Leertext","en":"Empty text"},"sm":3},
-      "wasteMappings":{"type":"table","label":{"de":"Titel-Zuordnung","en":"Title mappings"},"newLine":true,"items":[{"type":"text","attr":"match","title":{"de":"Titel enthält","en":"Title contains"}},{"type":"text","attr":"name","title":{"de":"Anzeigename","en":"Display name"}}]}
-    }},
-    "triggers":{"type":"panel","label":"Trigger","items":{
-      "triggerHistoryDays":{"type":"number","label":{"de":"Historie aufbewahren (Tage)","en":"History retention (days)"},"min":1,"max":3650,"sm":4},
-      "triggerRules":{"type":"table","label":{"de":"Triggerregeln","en":"Trigger rules"},"newLine":true,"uniqueColumns":["name"],"items":[
-        {"type":"text","attr":"name","title":{"de":"Name / ID","en":"Name / ID"},"width":"16%"},{"type":"checkbox","attr":"enabled","title":{"de":"Aktiv","en":"Active"},"width":"6%","default":true},
-        {"type":"select","attr":"eventType","title":{"de":"Terminart","en":"Event type"},"options":[{"label":{"de":"Allgemein","en":"General"},"value":"GENERAL"},{"label":{"de":"Betreuung","en":"Stay"},"value":"STAY"},{"label":{"de":"Schule","en":"School"},"value":"SCHOOL"},{"label":{"de":"Schulferien","en":"School holiday"},"value":"SCHOOL_HOLIDAY"},{"label":{"de":"Geburtstag","en":"Birthday"},"value":"BIRTHDAY"},{"label":{"de":"Privat","en":"Private"},"value":"PRIVATE"},{"label":{"de":"Abfall","en":"Waste"},"value":"WASTE"},{"label":{"de":"Reinigung","en":"Cleaning"},"value":"CLEANING"},{"label":{"de":"Sonstige","en":"Other"},"value":"OTHER"}]},{"type":"text","attr":"customTypeLabel","title":{"de":"Eigene Terminart","en":"Custom event type"},"hidden":"data.eventType !== 'OTHER'"},{"type":"text","attr":"childName","title":{"de":"Kindname (leer = alle)","en":"Child name (blank = all)"},"help":{"de":"Der Name wird ohne Beachtung der Groß-/Kleinschreibung verglichen.","en":"The name comparison is case-insensitive."}},{"type":"text","attr":"responsibleName","title":{"de":"Betreuende Person (leer = alle)","en":"Responsible person (blank = all)"},"help":{"de":"Bei Betreuungsterminen auf die verantwortliche Person einschränken. Der Name wird ohne Beachtung der Groß-/Kleinschreibung verglichen.","en":"Restrict stay events to the responsible person. The name comparison is case-insensitive."},"hidden":"data.eventType !== 'STAY'"},
-        {"type":"select","attr":"position","title":{"de":"Zeitpunkt","en":"Position"},"options":[{"label":{"de":"Vor Beginn","en":"Before start"},"value":"beforeStart"},{"label":{"de":"Nach Beginn","en":"After start"},"value":"afterStart"},{"label":{"de":"Vor Ende","en":"Before end"},"value":"beforeEnd"},{"label":{"de":"Nach Ende","en":"After end"},"value":"afterEnd"}]},
-        {"type":"number","attr":"offset","title":{"de":"Offset","en":"Offset"},"min":0},{"type":"select","attr":"unit","title":{"de":"Einheit","en":"Unit"},"options":[{"label":{"de":"Sekunden","en":"seconds"},"value":"seconds"},{"label":{"de":"Minuten","en":"minutes"},"value":"minutes"},{"label":{"de":"Stunden","en":"hours"},"value":"hours"},{"label":{"de":"Tage","en":"days"},"value":"days"}]},{"type":"number","attr":"catchUpSeconds","title":{"de":"Impuls-/Nachholzeit (Sekunden)","en":"Pulse/catch-up time (seconds)"},"help":{"de":"So lange bleibt active nach der Auslösung wahr. Gleichzeitig wird ein verpasster Zeitpunkt innerhalb dieses Fensters nachgeholt.","en":"How long active remains true after firing. A missed scheduled time is also caught up within this window."},"min":1,"default":60}
-      ]}
-    }}
+  "$schema": "https://raw.githubusercontent.com/ioBroker/ioBroker.admin/master/packages/jsonConfig/schemas/jsonConfig.json",
+  "i18n": true,
+  "type": "tabs",
+  "items": {
+    "connection": {
+      "type": "panel",
+      "label": {
+        "de": "Verbindung",
+        "en": "Connection"
+      },
+      "items": {
+        "_heading": {
+          "type": "header",
+          "text": {
+            "de": "FamilienPlan verbinden",
+            "en": "Connect FamilienPlan"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "_intro": {
+          "type": "staticText",
+          "text": {
+            "de": "Verbinde deinen Familienkalender und prüfe, welche Daten freigegeben sind.",
+            "en": "Connect your family calendar and check which data is available."
+          },
+          "xs": 12,
+          "style": {
+            "opacity": 0.8,
+            "marginBottom": 16,
+            "lineHeight": "1.6"
+          }
+        },
+        "_access": {
+          "type": "header",
+          "text": {
+            "de": "Zugang",
+            "en": "Access"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "baseUrl": {
+          "type": "text",
+          "label": {
+            "de": "FamilienPlan-Basis-URL",
+            "en": "FamilienPlan base URL"
+          },
+          "sm": 12,
+          "validator": "!data.baseUrl || /^https?:\\/\\//.test(data.baseUrl)",
+          "validatorErrorText": "Bitte eine gültige HTTP- oder HTTPS-URL eingeben.",
+          "validatorNoSaveOnError": true,
+          "xs": 12,
+          "md": 6,
+          "style": {
+            "marginBottom": 12
+          },
+          "newLine": false
+        },
+        "apiKey": {
+          "type": "password",
+          "label": {
+            "de": "API-Schlüssel",
+            "en": "API key"
+          },
+          "sm": 12,
+          "newLine": false,
+          "xs": 12,
+          "md": 6,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "test": {
+          "type": "sendTo",
+          "label": {
+            "de": "Verbindung und Berechtigungen testen",
+            "en": "Test connection and permissions"
+          },
+          "command": "testConnection",
+          "jsonData": "{\"baseUrl\":\"${data.baseUrl}\",\"apiKey\":\"${data.apiKey}\",\"timezone\":\"${data.timezone}\",\"httpTimeout\":${data.httpTimeout},\"verifySsl\":${data.verifySsl},\"pastDays\":${data.pastDays},\"futureDays\":${data.futureDays},\"rangePeriod\":\"${data.rangePeriod}\",\"childIds\":\"${data.childIds}\"}",
+          "showProcess": true,
+          "timeout": 30000,
+          "variant": "contained",
+          "newLine": true,
+          "sm": 12,
+          "xs": 12,
+          "md": 6,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "_settings": {
+          "type": "header",
+          "text": {
+            "de": "Zeit & Verbindung",
+            "en": "Time & connection"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "timezone": {
+          "type": "text",
+          "label": {
+            "de": "Zeitzone",
+            "en": "Time zone"
+          },
+          "default": "Europe/Berlin",
+          "sm": 6,
+          "xs": 12,
+          "md": 4,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "httpTimeout": {
+          "type": "number",
+          "label": {
+            "de": "HTTP-Timeout (ms)",
+            "en": "HTTP timeout (ms)"
+          },
+          "min": 1000,
+          "max": 120000,
+          "sm": 6,
+          "xs": 12,
+          "md": 4,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "verifySsl": {
+          "type": "checkbox",
+          "label": {
+            "de": "SSL-Zertifikat prüfen",
+            "en": "Verify SSL certificate"
+          },
+          "help": {
+            "de": "Deaktivieren ist unsicher und erzeugt eine Warnung im Log.",
+            "en": "Disabling is insecure and creates a log warning."
+          },
+          "sm": 6,
+          "xs": 12,
+          "md": 4,
+          "style": {
+            "marginBottom": 12
+          }
+        }
+      },
+      "style": {
+        "maxWidth": 1280,
+        "margin": "0 auto",
+        "padding": "8px 20px 32px",
+        "boxSizing": "border-box"
+      }
+    },
+    "polling": {
+      "type": "panel",
+      "label": {
+        "de": "Abruf",
+        "en": "Polling"
+      },
+      "items": {
+        "_heading": {
+          "type": "header",
+          "text": {
+            "de": "Kalender synchronisieren",
+            "en": "Synchronize your calendar"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "_intro": {
+          "type": "staticText",
+          "text": {
+            "de": "Lege fest, welche Termine geladen werden und wie oft sie aktualisiert werden.",
+            "en": "Choose which events to load and how often to update them."
+          },
+          "xs": 12,
+          "style": {
+            "opacity": 0.8,
+            "marginBottom": 16,
+            "lineHeight": "1.6"
+          }
+        },
+        "_range": {
+          "type": "header",
+          "text": {
+            "de": "Zeitraum & Rhythmus",
+            "en": "Range & schedule"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "rangePeriod": {
+          "type": "select",
+          "label": {
+            "de": "Zeitraum",
+            "en": "Period"
+          },
+          "options": [
+            {
+              "label": {
+                "de": "Diese Woche",
+                "en": "This week"
+              },
+              "value": "week"
+            },
+            {
+              "label": {
+                "de": "Dieser Monat",
+                "en": "This month"
+              },
+              "value": "month"
+            },
+            {
+              "label": {
+                "de": "Dieses Quartal",
+                "en": "This quarter"
+              },
+              "value": "quarter"
+            },
+            {
+              "label": {
+                "de": "Dieses Jahr",
+                "en": "This year"
+              },
+              "value": "year"
+            }
+          ],
+          "default": "year",
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "pastDays": {
+          "type": "number",
+          "label": {
+            "de": "Vorherige Tage",
+            "en": "Previous days"
+          },
+          "help": {
+            "de": "Erweitert den gewählten Zeitraum vor dessen Beginn.",
+            "en": "Extends the selected period before its start."
+          },
+          "min": 0,
+          "max": 365,
+          "default": 31,
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "futureDays": {
+          "type": "number",
+          "label": {
+            "de": "Nachfolgende Tage",
+            "en": "Following days"
+          },
+          "help": {
+            "de": "Erweitert den gewählten Zeitraum nach dessen Ende.",
+            "en": "Extends the selected period after its end."
+          },
+          "min": 0,
+          "max": 365,
+          "default": 31,
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "pollInterval": {
+          "type": "number",
+          "label": {
+            "de": "Intervall (Minuten)",
+            "en": "Interval (minutes)"
+          },
+          "min": 1,
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "_selection": {
+          "type": "header",
+          "text": {
+            "de": "Kinder & Betreuung",
+            "en": "Children & custody"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "childIds": {
+          "type": "text",
+          "label": {
+            "de": "Kind-IDs (kommagetrennt, leer = alle)",
+            "en": "Child IDs (comma-separated, blank = all)"
+          },
+          "help": {
+            "de": "Optional auf bestimmte Kinder einschränken. Leer lädt die freigegebenen Kalenderdaten aller Kinder.",
+            "en": "Optionally restrict the query to specific children. Empty loads permitted calendar data for all children."
+          },
+          "sm": 12,
+          "xs": 12,
+          "md": 6,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "fetchLocations": {
+          "type": "checkbox",
+          "label": {
+            "de": "Aufenthalts-/Betreuungsstatus abrufen",
+            "en": "Fetch custody/location status"
+          },
+          "help": {
+            "de": "Lädt je Kind die aktuell verantwortliche Person, Quelle, Gültigkeit und den nächsten Wechsel. Es werden keine GPS-Koordinaten abgerufen.",
+            "en": "Loads the currently responsible person, source, validity and next change for each child. No GPS coordinates are retrieved."
+          },
+          "sm": 12,
+          "xs": 12,
+          "md": 6,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "_recovery": {
+          "type": "header",
+          "text": {
+            "de": "Wiederholungen & Aufbewahrung",
+            "en": "Retries & retention"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "retryCount": {
+          "type": "number",
+          "label": {
+            "de": "Wiederholungsversuche",
+            "en": "Retries"
+          },
+          "min": 0,
+          "max": 10,
+          "newLine": true,
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "retryBackoff": {
+          "type": "number",
+          "label": {
+            "de": "Backoff-Basis (ms)",
+            "en": "Backoff base (ms)"
+          },
+          "min": 100,
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "eventRetentionDays": {
+          "type": "number",
+          "label": {
+            "de": "Objekt-Aufbewahrung (Tage)",
+            "en": "Object retention (days)"
+          },
+          "help": {
+            "de": "So lange bleiben Einzelobjekte erhalten, nachdem sie nicht mehr von der API geliefert wurden. Sie werden sofort inaktiv und erst nach dieser Frist gelöscht.",
+            "en": "How long individual objects remain after the API no longer returns them. They become inactive immediately and are deleted after this period."
+          },
+          "min": 0,
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        }
+      },
+      "style": {
+        "maxWidth": 1280,
+        "margin": "0 auto",
+        "padding": "8px 20px 32px",
+        "boxSizing": "border-box"
+      }
+    },
+    "timeline": {
+      "type": "panel",
+      "label": "Timeline",
+      "items": {
+        "_heading": {
+          "type": "header",
+          "text": {
+            "de": "Deine Tagesübersicht",
+            "en": "Your daily overview"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "_intro": {
+          "type": "staticText",
+          "text": {
+            "de": "Fasse Termine zu einer übersichtlichen Timeline zusammen.",
+            "en": "Combine events into an easy-to-read daily timeline."
+          },
+          "xs": 12,
+          "style": {
+            "opacity": 0.8,
+            "marginBottom": 16,
+            "lineHeight": "1.6"
+          }
+        },
+        "_scope": {
+          "type": "header",
+          "text": {
+            "de": "Inhalt der Timeline",
+            "en": "Timeline contents"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "timelineEnabled": {
+          "type": "checkbox",
+          "label": {
+            "de": "Aktiviert",
+            "en": "Enabled"
+          },
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "timelineDays": {
+          "type": "number",
+          "label": {
+            "de": "Tage",
+            "en": "Days"
+          },
+          "min": 1,
+          "max": 366,
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "timelineTypes": {
+          "type": "text",
+          "label": {
+            "de": "Typen (kommagetrennt, leer = alle)",
+            "en": "Types (comma-separated, blank = all)"
+          },
+          "sm": 12,
+          "xs": 12,
+          "md": 6,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "_format": {
+          "type": "header",
+          "text": {
+            "de": "Text & Darstellung",
+            "en": "Text & formatting"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "timelineTemplate": {
+          "type": "text",
+          "label": {
+            "de": "Eintragsvorlage",
+            "en": "Entry template"
+          },
+          "help": {
+            "de": "Platzhalter: {title}, {time}, {date}, {type}. Beispiel: {time} · {title}",
+            "en": "Placeholders: {title}, {time}, {date}, {type}. Example: {time} · {title}"
+          },
+          "newLine": true,
+          "sm": 12,
+          "xs": 12,
+          "md": 12,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "timelineSeparator": {
+          "type": "text",
+          "label": {
+            "de": "Trennzeichen",
+            "en": "Separator"
+          },
+          "sm": 6,
+          "xs": 12,
+          "md": 2,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "timeFormat": {
+          "type": "text",
+          "label": {
+            "de": "Zeitformat",
+            "en": "Time format"
+          },
+          "sm": 6,
+          "xs": 12,
+          "md": 2,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "dateFormat": {
+          "type": "text",
+          "label": {
+            "de": "Datumsformat",
+            "en": "Date format"
+          },
+          "sm": 6,
+          "xs": 12,
+          "md": 2,
+          "style": {
+            "marginBottom": 12
+          }
+        }
+      },
+      "style": {
+        "maxWidth": 1280,
+        "margin": "0 auto",
+        "padding": "8px 20px 32px",
+        "boxSizing": "border-box"
+      }
+    },
+    "birthdays": {
+      "type": "panel",
+      "label": {
+        "de": "Geburtstage",
+        "en": "Birthdays"
+      },
+      "items": {
+        "_heading": {
+          "type": "header",
+          "text": {
+            "de": "Geburtstage im Blick",
+            "en": "Keep track of birthdays"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "_intro": {
+          "type": "staticText",
+          "text": {
+            "de": "Gestalte die Geburtstagstexte für deine Anzeigen und Automationen.",
+            "en": "Customize birthday messages for your displays and automations."
+          },
+          "xs": 12,
+          "style": {
+            "opacity": 0.8,
+            "marginBottom": 16,
+            "lineHeight": "1.6"
+          }
+        },
+        "_display": {
+          "type": "header",
+          "text": {
+            "de": "Anzeige",
+            "en": "Display"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "birthdaysEnabled": {
+          "type": "checkbox",
+          "label": {
+            "de": "Aktiviert",
+            "en": "Enabled"
+          },
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "birthdayDateFormat": {
+          "type": "text",
+          "label": {
+            "de": "Datumsformat",
+            "en": "Date format"
+          },
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "birthdaySeparator": {
+          "type": "text",
+          "label": {
+            "de": "Trennzeichen",
+            "en": "Separator"
+          },
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "_templates": {
+          "type": "header",
+          "text": {
+            "de": "Nachrichtenvorlagen",
+            "en": "Message templates"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "birthdayTodayTemplate": {
+          "type": "text",
+          "label": {
+            "de": "Vorlage heute",
+            "en": "Today template"
+          },
+          "newLine": true,
+          "sm": 12,
+          "xs": 12,
+          "md": 6,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "birthdayTomorrowTemplate": {
+          "type": "text",
+          "label": {
+            "de": "Vorlage morgen",
+            "en": "Tomorrow template"
+          },
+          "sm": 12,
+          "xs": 12,
+          "md": 6,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "birthdayFutureTemplate": {
+          "type": "text",
+          "label": {
+            "de": "Vorlage weitere Tage",
+            "en": "Future template"
+          },
+          "newLine": true,
+          "sm": 12,
+          "xs": 12,
+          "md": 6,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "birthdayEmptyText": {
+          "type": "text",
+          "label": {
+            "de": "Leertext",
+            "en": "Empty text"
+          },
+          "sm": 12,
+          "xs": 12,
+          "md": 6,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "_placeholders": {
+          "type": "staticText",
+          "text": {
+            "de": "Platzhalter: {name}, {age}, {birthDate}, {date}, {days}.",
+            "en": "Placeholders: {name}, {age}, {birthDate}, {date}, {days}."
+          },
+          "xs": 12,
+          "style": {
+            "opacity": 0.8,
+            "marginBottom": 16,
+            "lineHeight": "1.6"
+          }
+        }
+      },
+      "style": {
+        "maxWidth": 1280,
+        "margin": "0 auto",
+        "padding": "8px 20px 32px",
+        "boxSizing": "border-box"
+      }
+    },
+    "waste": {
+      "type": "panel",
+      "label": {
+        "de": "Abfall",
+        "en": "Waste"
+      },
+      "items": {
+        "_heading": {
+          "type": "header",
+          "text": {
+            "de": "Keine Abholung verpassen",
+            "en": "Never miss a collection"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "_intro": {
+          "type": "staticText",
+          "text": {
+            "de": "Passe Abholhinweise an und vergib verständliche Namen für Abfallarten.",
+            "en": "Customize collection reminders and give waste types clear names."
+          },
+          "xs": 12,
+          "style": {
+            "opacity": 0.8,
+            "marginBottom": 16,
+            "lineHeight": "1.6"
+          }
+        },
+        "_display": {
+          "type": "header",
+          "text": {
+            "de": "Anzeige",
+            "en": "Display"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "wasteEnabled": {
+          "type": "checkbox",
+          "label": {
+            "de": "Aktiviert",
+            "en": "Enabled"
+          },
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "wasteSeparator": {
+          "type": "text",
+          "label": {
+            "de": "Trennzeichen",
+            "en": "Separator"
+          },
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "wasteEmptyText": {
+          "type": "text",
+          "label": {
+            "de": "Leertext",
+            "en": "Empty text"
+          },
+          "sm": 6,
+          "xs": 12,
+          "md": 3,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "_templates": {
+          "type": "header",
+          "text": {
+            "de": "Nachrichtenvorlagen",
+            "en": "Message templates"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "wasteTodayTemplate": {
+          "type": "text",
+          "label": {
+            "de": "Vorlage heute",
+            "en": "Today template"
+          },
+          "newLine": true,
+          "sm": 12,
+          "xs": 12,
+          "md": 6,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "wasteTomorrowTemplate": {
+          "type": "text",
+          "label": {
+            "de": "Vorlage morgen",
+            "en": "Tomorrow template"
+          },
+          "sm": 12,
+          "xs": 12,
+          "md": 6,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "wasteFutureTemplate": {
+          "type": "text",
+          "label": {
+            "de": "Vorlage weitere Tage",
+            "en": "Future template"
+          },
+          "newLine": true,
+          "sm": 12,
+          "xs": 12,
+          "md": 6,
+          "style": {
+            "marginBottom": 12
+          }
+        },
+        "_placeholders": {
+          "type": "staticText",
+          "text": {
+            "de": "Platzhalter: {title}, {wasteType}, {date}, {days}.",
+            "en": "Placeholders: {title}, {wasteType}, {date}, {days}."
+          },
+          "xs": 12,
+          "style": {
+            "opacity": 0.8,
+            "marginBottom": 16,
+            "lineHeight": "1.6"
+          }
+        },
+        "_names": {
+          "type": "header",
+          "text": {
+            "de": "Eigene Bezeichnungen",
+            "en": "Custom names"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "wasteMappings": {
+          "type": "table",
+          "label": {
+            "de": "Titel-Zuordnung",
+            "en": "Title mappings"
+          },
+          "newLine": true,
+          "items": [
+            {
+              "type": "text",
+              "attr": "match",
+              "title": {
+                "de": "Titel enthält",
+                "en": "Title contains"
+              }
+            },
+            {
+              "type": "text",
+              "attr": "name",
+              "title": {
+                "de": "Anzeigename",
+                "en": "Display name"
+              }
+            }
+          ],
+          "xs": 12,
+          "style": {
+            "marginBottom": 12
+          },
+          "sm": 12,
+          "md": 12
+        }
+      },
+      "style": {
+        "maxWidth": 1280,
+        "margin": "0 auto",
+        "padding": "8px 20px 32px",
+        "boxSizing": "border-box"
+      }
+    },
+    "triggers": {
+      "type": "panel",
+      "label": "Trigger",
+      "items": {
+        "_heading": {
+          "type": "header",
+          "text": {
+            "de": "Automationen mit Terminen starten",
+            "en": "Start automations with events"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "_intro": {
+          "type": "staticText",
+          "text": {
+            "de": "Eine Regel pro aufklappbarem Formular. Lege fest, welche Termine passen, wann ausgelöst wird und wie lange der Trigger aktiv bleibt.",
+            "en": "One expandable form per rule. Choose matching events, firing time and how long the trigger stays active."
+          },
+          "xs": 12,
+          "style": {
+            "opacity": 0.8,
+            "marginBottom": 16,
+            "lineHeight": "1.6"
+          }
+        },
+        "triggerRules": {
+          "type": "accordion",
+          "label": {
+            "de": "Triggerregeln",
+            "en": "Trigger rules"
+          },
+          "titleAttr": "name",
+          "clone": true,
+          "items": [
+            {
+              "type": "header",
+              "text": {
+                "de": "Regel",
+                "en": "Rule"
+              },
+              "size": 4,
+              "xs": 12,
+              "newLine": true,
+              "style": {
+                "marginTop": 24,
+                "marginBottom": 8
+              },
+              "attr": "_section0"
+            },
+            {
+              "type": "text",
+              "attr": "name",
+              "label": {
+                "de": "Name der Regel",
+                "en": "Rule name"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 9,
+              "default": "",
+              "validator": "!!data.name?.trim() && (!globalData.triggerRules || globalData.triggerRules.filter(r => (r.name || '').trim().toLowerCase() === data.name.trim().toLowerCase()).length <= 1)",
+              "validatorNoSaveOnError": true,
+              "validatorErrorText": "Bitte einen eindeutigen Namen eingeben."
+            },
+            {
+              "type": "checkbox",
+              "attr": "enabled",
+              "default": true,
+              "label": {
+                "de": "Regel aktivieren",
+                "en": "Enable rule"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 3
+            },
+            {
+              "type": "header",
+              "text": {
+                "de": "Welche Termine?",
+                "en": "Which events?"
+              },
+              "size": 4,
+              "xs": 12,
+              "newLine": true,
+              "style": {
+                "marginTop": 24,
+                "marginBottom": 8
+              },
+              "attr": "_section3"
+            },
+            {
+              "type": "select",
+              "attr": "eventType",
+              "options": [
+                {
+                  "label": {
+                    "de": "Alle Terminarten",
+                    "en": "All event types"
+                  },
+                  "value": ""
+                },
+                {
+                  "label": {
+                    "de": "Allgemein",
+                    "en": "General"
+                  },
+                  "value": "GENERAL"
+                },
+                {
+                  "label": {
+                    "de": "Betreuung",
+                    "en": "Stay"
+                  },
+                  "value": "STAY"
+                },
+                {
+                  "label": {
+                    "de": "Schule",
+                    "en": "School"
+                  },
+                  "value": "SCHOOL"
+                },
+                {
+                  "label": {
+                    "de": "Schulferien",
+                    "en": "School holiday"
+                  },
+                  "value": "SCHOOL_HOLIDAY"
+                },
+                {
+                  "label": {
+                    "de": "Geburtstag",
+                    "en": "Birthday"
+                  },
+                  "value": "BIRTHDAY"
+                },
+                {
+                  "label": {
+                    "de": "Privat",
+                    "en": "Private"
+                  },
+                  "value": "PRIVATE"
+                },
+                {
+                  "label": {
+                    "de": "Abfall",
+                    "en": "Waste"
+                  },
+                  "value": "WASTE"
+                },
+                {
+                  "label": {
+                    "de": "Reinigung",
+                    "en": "Cleaning"
+                  },
+                  "value": "CLEANING"
+                },
+                {
+                  "label": {
+                    "de": "Sonstige",
+                    "en": "Other"
+                  },
+                  "value": "OTHER"
+                }
+              ],
+              "label": {
+                "de": "Terminart",
+                "en": "Event type"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 6,
+              "default": ""
+            },
+            {
+              "type": "text",
+              "attr": "customTypeLabel",
+              "hidden": "data.eventType !== 'OTHER'",
+              "label": {
+                "de": "Eigene Terminart",
+                "en": "Custom event type"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 6,
+              "default": ""
+            },
+            {
+              "type": "text",
+              "attr": "childName",
+              "help": {
+                "de": "Leer = alle Kinder. Groß-/Kleinschreibung wird ignoriert.",
+                "en": "Blank = all children. Case-insensitive."
+              },
+              "label": {
+                "de": "Kind",
+                "en": "Child"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 6,
+              "default": ""
+            },
+            {
+              "type": "text",
+              "attr": "responsibleName",
+              "help": {
+                "de": "Leer = alle Personen. Groß-/Kleinschreibung wird ignoriert.",
+                "en": "Blank = all people. Case-insensitive."
+              },
+              "hidden": "data.eventType && data.eventType !== 'STAY'",
+              "label": {
+                "de": "Betreuende Person",
+                "en": "Responsible person"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 6,
+              "default": ""
+            },
+            {
+              "type": "text",
+              "attr": "title",
+              "label": {
+                "de": "Titel",
+                "en": "Title"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 8,
+              "default": "",
+              "newLine": true,
+              "help": {
+                "de": "Leer = alle Termine. Groß-/Kleinschreibung wird ignoriert.",
+                "en": "Blank = all events. Case-insensitive."
+              }
+            },
+            {
+              "type": "select",
+              "attr": "titleMatchMode",
+              "label": {
+                "de": "Vergleich",
+                "en": "Comparison"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 4,
+              "options": [
+                {
+                  "label": {
+                    "de": "Trifft exakt zu",
+                    "en": "Matches exactly"
+                  },
+                  "value": "exact"
+                },
+                {
+                  "label": {
+                    "de": "Enthält",
+                    "en": "Contains"
+                  },
+                  "value": "contains"
+                }
+              ],
+              "default": "exact",
+              "disabled": "!data.title"
+            },
+            {
+              "type": "text",
+              "attr": "description",
+              "label": {
+                "de": "Notizen / Beschreibung",
+                "en": "Notes / description"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 8,
+              "default": "",
+              "newLine": true,
+              "help": {
+                "de": "Leer = alle Termine. Groß-/Kleinschreibung wird ignoriert.",
+                "en": "Blank = all events. Case-insensitive."
+              }
+            },
+            {
+              "type": "select",
+              "attr": "descriptionMatchMode",
+              "label": {
+                "de": "Vergleich",
+                "en": "Comparison"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 4,
+              "options": [
+                {
+                  "label": {
+                    "de": "Trifft exakt zu",
+                    "en": "Matches exactly"
+                  },
+                  "value": "exact"
+                },
+                {
+                  "label": {
+                    "de": "Enthält",
+                    "en": "Contains"
+                  },
+                  "value": "contains"
+                }
+              ],
+              "default": "exact",
+              "disabled": "!data.description"
+            },
+            {
+              "type": "header",
+              "text": {
+                "de": "Wann auslösen?",
+                "en": "When to fire?"
+              },
+              "size": 4,
+              "xs": 12,
+              "newLine": true,
+              "style": {
+                "marginTop": 24,
+                "marginBottom": 8
+              },
+              "attr": "_section12"
+            },
+            {
+              "type": "select",
+              "attr": "position",
+              "options": [
+                {
+                  "label": {
+                    "de": "Vor Beginn",
+                    "en": "Before start"
+                  },
+                  "value": "beforeStart"
+                },
+                {
+                  "label": {
+                    "de": "Nach Beginn",
+                    "en": "After start"
+                  },
+                  "value": "afterStart"
+                },
+                {
+                  "label": {
+                    "de": "Vor Ende",
+                    "en": "Before end"
+                  },
+                  "value": "beforeEnd"
+                },
+                {
+                  "label": {
+                    "de": "Nach Ende",
+                    "en": "After end"
+                  },
+                  "value": "afterEnd"
+                }
+              ],
+              "label": {
+                "de": "Zeitpunkt",
+                "en": "Position"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 6,
+              "default": "beforeStart"
+            },
+            {
+              "type": "number",
+              "attr": "offset",
+              "min": 0,
+              "label": {
+                "de": "Zeitabstand",
+                "en": "Time offset"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 3,
+              "default": 0
+            },
+            {
+              "type": "select",
+              "attr": "unit",
+              "options": [
+                {
+                  "label": {
+                    "de": "Sekunden",
+                    "en": "seconds"
+                  },
+                  "value": "seconds"
+                },
+                {
+                  "label": {
+                    "de": "Minuten",
+                    "en": "minutes"
+                  },
+                  "value": "minutes"
+                },
+                {
+                  "label": {
+                    "de": "Stunden",
+                    "en": "hours"
+                  },
+                  "value": "hours"
+                },
+                {
+                  "label": {
+                    "de": "Tage",
+                    "en": "days"
+                  },
+                  "value": "days"
+                }
+              ],
+              "label": {
+                "de": "Einheit",
+                "en": "Unit"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 3,
+              "default": "minutes"
+            },
+            {
+              "type": "header",
+              "text": {
+                "de": "Wie lange aktiv?",
+                "en": "How long active?"
+              },
+              "size": 4,
+              "xs": 12,
+              "newLine": true,
+              "style": {
+                "marginTop": 24,
+                "marginBottom": 8
+              },
+              "attr": "_section16"
+            },
+            {
+              "type": "text",
+              "attr": "catchUpSeconds",
+              "help": {
+                "de": "Leer = bleibt aktiv, bis triggers.<Regel>.reset auf true gesetzt wird. Weitere Auslösungen zählen trotzdem weiter.",
+                "en": "Blank = stays active until triggers.<rule>.reset is set to true. Further firings still increment the counter."
+              },
+              "default": 60,
+              "label": {
+                "de": "Triggerlänge",
+                "en": "Trigger length"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 8,
+              "newLine": true,
+              "validator": "data.catchUpSeconds == null || String(data.catchUpSeconds).trim() === '' || (/^\\d+$/.test(String(data.catchUpSeconds)) && Number(data.catchUpSeconds) > 0 && Number.isSafeInteger(Number(data.catchUpSeconds)))",
+              "validatorNoSaveOnError": true,
+              "validatorErrorText": "Leer lassen oder eine positive ganze Zahl eingeben."
+            },
+            {
+              "type": "select",
+              "attr": "lengthUnit",
+              "label": {
+                "de": "Einheit der Triggerlänge",
+                "en": "Trigger length unit"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 4,
+              "options": [
+                {
+                  "label": {
+                    "de": "Sekunden",
+                    "en": "seconds"
+                  },
+                  "value": "seconds"
+                },
+                {
+                  "label": {
+                    "de": "Minuten",
+                    "en": "minutes"
+                  },
+                  "value": "minutes"
+                },
+                {
+                  "label": {
+                    "de": "Stunden",
+                    "en": "hours"
+                  },
+                  "value": "hours"
+                },
+                {
+                  "label": {
+                    "de": "Tage",
+                    "en": "days"
+                  },
+                  "value": "days"
+                }
+              ],
+              "default": "seconds",
+              "disabled": "data.catchUpSeconds == null || String(data.catchUpSeconds).trim() === ''"
+            },
+            {
+              "type": "header",
+              "text": {
+                "de": "Verpasste Auslösungen",
+                "en": "Missed firings"
+              },
+              "size": 4,
+              "xs": 12,
+              "newLine": true,
+              "style": {
+                "marginTop": 24,
+                "marginBottom": 8
+              },
+              "attr": "_section19"
+            },
+            {
+              "type": "number",
+              "attr": "catchUpWindowSeconds",
+              "label": {
+                "de": "Nachholfenster (Sekunden)",
+                "en": "Catch-up window (seconds)"
+              },
+              "xs": 12,
+              "sm": 6,
+              "md": 6,
+              "min": 1,
+              "default": 60,
+              "help": {
+                "de": "Verpasste Auslösungen werden nur innerhalb dieses Zeitfensters nachgeholt. Unabhängig von der Triggerlänge.",
+                "en": "Missed firings are caught up only within this window. Independent of trigger length."
+              }
+            }
+          ],
+          "xs": 12,
+          "sm": 12,
+          "md": 12,
+          "newLine": true
+        },
+        "_history": {
+          "type": "header",
+          "text": {
+            "de": "Historie",
+            "en": "History"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true,
+          "style": {
+            "marginTop": 24,
+            "marginBottom": 8
+          }
+        },
+        "triggerHistoryDays": {
+          "type": "number",
+          "label": {
+            "de": "Historie aufbewahren (Tage)",
+            "en": "History retention (days)"
+          },
+          "min": 1,
+          "max": 3650,
+          "sm": 6,
+          "xs": 12,
+          "md": 4,
+          "style": {
+            "marginBottom": 12
+          }
+        }
+      },
+      "style": {
+        "maxWidth": 1280,
+        "margin": "0 auto",
+        "padding": "8px 20px 32px",
+        "boxSizing": "border-box"
+      }
+    }
   }
 }

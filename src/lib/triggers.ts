@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { createHash } from "node:crypto";
-import { occurrenceKey } from "./aggregation";
+import { completeEvent, occurrenceKey } from "./aggregation";
 import type { CalendarEvent, TriggerRule } from "./types";
 
 const units = {
@@ -9,6 +9,59 @@ const units = {
   hours: "hours",
   days: "days",
 } as const;
+const secondsPerUnit = { seconds: 1, minutes: 60, hours: 3600, days: 86400 };
+
+/** Keep old rules in seconds; an explicitly empty value means no automatic reset. */
+export function triggerLengthSeconds(rule: TriggerRule): number | null {
+  const value = rule.catchUpSeconds;
+  if (value === null || (typeof value === "string" && !value.trim())) {
+    return null;
+  }
+  const length = Number(value ?? 60);
+  return Number.isFinite(length) && length > 0
+    ? length * (secondsPerUnit[rule.lengthUnit ?? "seconds"] ?? 1)
+    : 60;
+}
+
+export function catchUpWindowSeconds(rule: TriggerRule): number {
+  // Old rules used one field for both pulse length and catch-up time.
+  const legacy =
+    rule.lengthUnit === undefined ? Number(rule.catchUpSeconds ?? 60) : 60;
+  const value = rule.catchUpWindowSeconds ?? legacy;
+  return Number.isFinite(value) && value >= 1 ? value : 60;
+}
+
+export function textMatches(
+  filter: string | undefined,
+  value: string | null | undefined,
+  mode: "exact" | "contains" = "exact",
+): boolean {
+  const expected = (filter ?? "").normalize("NFKC").trim().toLocaleLowerCase();
+  const actual = (value ?? "").normalize("NFKC").trim().toLocaleLowerCase();
+  return (
+    !expected ||
+    (mode === "contains" ? actual.includes(expected) : actual === expected)
+  );
+}
+
+export function triggerIsActive(
+  rule: TriggerRule,
+  lastTriggered: DateTime,
+  now: DateTime,
+  wasActive: boolean,
+  reset = false,
+): boolean {
+  const length = triggerLengthSeconds(rule);
+  return (
+    rule.enabled &&
+    wasActive &&
+    !reset &&
+    lastTriggered.isValid &&
+    (length === null ||
+      now.toMillis() < lastTriggered.toMillis() + length * 1000)
+  );
+}
+
 /**
  *
  */
@@ -16,6 +69,12 @@ export function ruleMatches(rule: TriggerRule, event: CalendarEvent): boolean {
   const configuredType = rule.eventType?.toUpperCase() || "";
   return (
     rule.enabled &&
+    textMatches(rule.title, event.title, rule.titleMatchMode) &&
+    textMatches(
+      rule.description,
+      completeEvent(event).description,
+      rule.descriptionMatchMode,
+    ) &&
     (!configuredType || configuredType === event.event_type.toUpperCase()) &&
     (configuredType !== "OTHER" ||
       !rule.customTypeLabel ||
@@ -71,6 +130,14 @@ export function triggerKey(rule: TriggerRule, event: CalendarEvent): string {
         rule.position,
         rule.offset,
         rule.unit,
+        ...(rule.title?.trim() || rule.description?.trim()
+          ? [
+              rule.title?.trim() ?? "",
+              rule.titleMatchMode ?? "exact",
+              rule.description?.trim() ?? "",
+              rule.descriptionMatchMode ?? "exact",
+            ]
+          : []),
       ].join("|"),
     )
     .digest("hex");
@@ -130,7 +197,7 @@ export function dueTriggers(
       const key = triggerKey(rule, event);
       const effectiveStart = DateTime.max(
         lastCheck,
-        now.minus({ seconds: rule.catchUpSeconds ?? 60 }),
+        now.minus({ seconds: catchUpWindowSeconds(rule) }),
       );
       if (scheduled >= effectiveStart && scheduled <= now && !seen.has(key)) {
         result.push({ rule, event, scheduled, key });

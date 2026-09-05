@@ -83,6 +83,7 @@ export interface CalendarEvent extends BaseCalendarEvent {
 
 export type TriggerPosition =
   "beforeStart" | "afterStart" | "beforeEnd" | "afterEnd";
+export type TriggerMatchMode = "exact" | "contains";
 export type TriggerUnit = "seconds" | "minutes" | "hours" | "days";
 /**
  *
@@ -101,6 +102,10 @@ export interface TriggerRule {
   childName?: string;
   /** Optional responsible-person filter for stay events. */
   responsibleName?: string;
+  title?: string;
+  titleMatchMode?: TriggerMatchMode;
+  description?: string;
+  descriptionMatchMode?: TriggerMatchMode;
   /**
    *
    */
@@ -110,7 +115,11 @@ export interface TriggerRule {
   /**
    *
    */
-  catchUpSeconds?: number;
+  /** Legacy storage key for trigger length; blank/null keeps active latched. */
+  catchUpSeconds?: number | string | null;
+  lengthUnit?: TriggerUnit;
+  /** Independent window for catching up missed scheduled times. */
+  catchUpWindowSeconds?: number;
 }
 /**
  *
