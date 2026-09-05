@@ -449,11 +449,15 @@ describe("Child and birthday display details", () => {
     await adapter.writeChildrenFromEvents([child], now.plus({ days: 1 }));
     expect(states.get("children.rika.age")).eq(12);
   });
-  it("derives child birth dates from explicitly linked cached birthdays", async () => {
+  it("only uses an explicit birth date from linked cached birthdays", async () => {
     const { adapter, states } = harness();
     adapter.events = [
       { ...stay, event_type: "BIRTHDAY", age: 12, child_id: 1 },
     ];
+    await adapter.writeChildrenFromEvents(adapter.childrenData, now);
+    expect(states.get("children.emma.birthDate")).eq("");
+    expect(states.get("children.emma.age")).eq(null);
+    adapter.events[0].birth_date = "2014-09-05";
     await adapter.writeChildrenFromEvents(adapter.childrenData, now);
     expect(states.get("children.emma.birthDate")).eq("05.09.2014");
     expect(states.get("children.emma.age")).eq(12);
@@ -484,9 +488,9 @@ describe("Child and birthday display details", () => {
         event_type: "BIRTHDAY",
         id: 3,
         title: "Gestern",
-        age: 30,
-        starts_at: "2026-09-04T00:00:00+02:00",
-        ends_at: "2026-09-05T00:00:00+02:00",
+        age: 31,
+        starts_at: "2027-09-04T00:00:00+02:00",
+        ends_at: "2027-09-05T00:00:00+02:00",
       },
     ];
     await adapter.writeBirthdays(events, now);
@@ -655,5 +659,88 @@ describe("FamilienPlan 0.1.99 birthday sources", () => {
     const item = JSON.parse(String(states.get("birthdays.month.09.json")))[0];
     expect(item.age).eq(null);
     expect(item.birthDate).eq("");
+  });
+});
+
+describe("FamilienPlan 0.1.100 birthday name projections", () => {
+  it("publishes names and actual birth dates for all sources while preserving calendar titles", async () => {
+    for (const source of ["birthday", "child", "person"] as const) {
+      const { adapter, states } = harness();
+      adapter.config.birthdaysEnabled = true;
+      const raw = {
+        event_type: "BIRTHDAY",
+        source,
+        id: source === "birthday" ? 1 : `${source}:1`,
+        ...(source === "child"
+          ? { child_id: 1 }
+          : source === "person"
+            ? { user_id: 1 }
+            : {}),
+        title: "Tom",
+        full_name: "Tom Grywnow",
+        first_name: "Tom",
+        last_name: "Grywnow",
+        display_name: "Tom",
+        birth_date: "2011-09-11",
+        all_day: true,
+        age: 15,
+        starts_at: "2026-09-11T00:00:00+02:00",
+        ends_at: "2026-09-12T00:00:00+02:00",
+      };
+      const events = parseEvents([raw]);
+      adapter.events = events;
+      await adapter.writeEvents(events, now);
+      await adapter.writeBirthdays(events, now);
+      expect(states.get("birthdays.next.name")).eq("Tom Grywnow");
+      expect(states.get("birthdays.next.title")).eq("Tom");
+      expect(states.get("birthdays.next.birthDate")).eq("11.09.2011");
+      for (const key of [
+        "first_name",
+        "last_name",
+        "display_name",
+        "full_name",
+        "birth_date",
+      ] as const) {
+        expect(states.get(`birthdays.next.${key}`)).eq(raw[key]);
+      }
+      for (const root of ["birthdays.summary", "birthdays.month.09"]) {
+        const item = JSON.parse(String(states.get(`${root}.json`)))[0];
+        expect(item).include({
+          name: "Tom Grywnow",
+          title: "Tom",
+          first_name: "Tom",
+          last_name: "Grywnow",
+          full_name: "Tom Grywnow",
+          display_name: "Tom",
+          birth_date: "2011-09-11",
+          birthDate: "11.09.2011",
+          age: 15,
+        });
+      }
+      const calendar = JSON.parse(
+        String(states.get("events.appointment.birthday.next.json")),
+      );
+      expect(calendar).include({
+        title: "Tom",
+        full_name: "Tom Grywnow",
+        birth_date: "2011-09-11",
+        id: raw.id,
+      });
+      expect(adapter.events).deep.eq(events);
+      const legacy = {
+        event_type: "BIRTHDAY",
+        id: raw.id,
+        title: "Legacy",
+        starts_at: raw.starts_at,
+        ends_at: raw.ends_at,
+      };
+      await adapter.writeBirthdays(parseEvents([legacy]), now);
+      expect(states.get("birthdays.next.name")).eq("Legacy");
+      expect(states.get("birthdays.next.full_name")).eq("");
+      expect(states.get("birthdays.next.first_name")).eq("");
+      expect(states.get("birthdays.next.birth_date")).eq(null);
+      expect(states.get("birthdays.next.birthDate")).eq("");
+      expect(states.get("birthdays.next.age")).eq(null);
+    }
   });
 });

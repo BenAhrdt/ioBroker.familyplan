@@ -26,24 +26,34 @@ export interface UpcomingBirthday {
   daysUntil: number;
 }
 
-/** Prefer an explicit birth date; otherwise derive it only from a known birthday age. */
+/** Resolve the public birthday name without modifying the calendar title. */
+export function birthdayName(event: CalendarEvent): string {
+  const clean = (value: unknown): string =>
+    typeof value === "string" ? value.trim() : "";
+  return (
+    clean(event.full_name) ||
+    [clean(event.first_name), clean(event.last_name)]
+      .filter(Boolean)
+      .join(" ") ||
+    clean(event.display_name) ||
+    clean(event.title)
+  );
+}
+
+/** Only explicit dates are birth dates; an annual occurrence cannot establish a birth year. */
 export function birthdayBirthDate(
   event: CalendarEvent,
   zone: string,
   knownBirthDate?: string | null,
 ): DateTime | undefined {
-  for (const value of [knownBirthDate, event.birth_date]) {
+  for (const value of [event.birth_date, knownBirthDate]) {
     const explicit =
       typeof value === "string" ? DateTime.fromISO(value, { zone }) : undefined;
     if (explicit?.isValid) {
       return explicit.startOf("day");
     }
   }
-  const occurrence = DateTime.fromISO(event.starts_at).setZone(zone);
-  if (!occurrence.isValid || typeof event.age !== "number") {
-    return undefined;
-  }
-  return occurrence.startOf("day").set({ year: occurrence.year - event.age });
+  return undefined;
 }
 
 /** One annual preview per source identity, including today and never negative days. */
@@ -69,32 +79,23 @@ export function upcomingBirthdays(
         ? children.find((item) => item.id === event.child_id)
         : undefined;
     const birthDate = birthdayBirthDate(event, zone, child?.birth_date);
-    const anniversary = birthDate ?? sourceDate;
-    // Luxon clamps February 29 to February 28 in non-leap years.
-    let date = anniversary.set({ year: today.year }).startOf("day");
+    const date = sourceDate.startOf("day");
     if (date < today) {
-      date = anniversary.set({ year: today.year + 1 }).startOf("day");
+      continue;
     }
-    const name = event.title ?? "";
+    const name = birthdayName(event);
     const identity = birthdayIdentity(event);
     const item = {
       event,
       name,
       birthDate: birthDate?.toFormat(dateFormat) ?? "",
-      date: date.toISODate()!,
-      age: birthDate ? date.year - birthDate.year : null,
+      date: date.toISODate(),
+      age: event.age ?? null,
       daysUntil: Math.round(date.diff(today, "days").days),
     };
     const previous = people.get(identity);
-    // Prefer the source occurrence nearest the upcoming anniversary.
-    if (
-      !previous ||
-      Math.abs(sourceDate.toMillis() - date.toMillis()) <
-        Math.abs(
-          DateTime.fromISO(previous.event.starts_at).toMillis() -
-            date.toMillis(),
-        )
-    ) {
+    // Recurrence dates and ages come from the server, including leap-day adjustments.
+    if (!previous || item.date < previous.date) {
       people.set(identity, item);
     }
   }

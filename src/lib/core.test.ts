@@ -400,7 +400,7 @@ describe("aggregations", () => {
       "Europe/Berlin",
       "dd.MM.yyyy",
     );
-    expect(b.birthDate).eq("06.09.1982");
+    expect(b.birthDate).eq("");
     const w = wasteItem(
       event({
         title: "Restabfall in Hohenahr",

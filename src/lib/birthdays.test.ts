@@ -2,15 +2,18 @@ import { expect } from "chai";
 import { DateTime } from "luxon";
 import {
   birthdayBirthDate,
+  birthdayName,
   birthdaySummaryText,
   upcomingBirthdays,
 } from "./birthdays";
+import { birthdayItem, occurrenceKey, uniqueOccurrences } from "./aggregation";
+import { parseEvents } from "./validation";
 import type { CalendarEvent } from "./types";
 
 const zone = "Europe/Berlin";
 const today = DateTime.fromISO("2026-09-05T15:00", { zone });
 const birthday = (
-  id: number,
+  id: number | string,
   name: string,
   date: string,
   age: number | null,
@@ -19,113 +22,132 @@ const birthday = (
   title: name,
   event_type: "BIRTHDAY",
   age,
+  all_day: true,
   starts_at: DateTime.fromISO(date, { zone }).toISO()!,
   ends_at: DateTime.fromISO(date, { zone }).plus({ days: 1 }).toISO()!,
 });
 const summary = (events: CalendarEvent[], now = today) =>
   upcomingBirthdays(events, now, zone, "dd.MM.yyyy");
 
-describe("Upcoming birthday summary", () => {
-  it("starts with today's birthdays and rolls yesterday forward with the next age", () => {
-    const items = summary([
+describe("FamilienPlan 0.1.100 birthdays", () => {
+  it("selects full, composed, display and legacy names in order without changing title", () => {
+    const event = birthday("child:1", "Tom", "2026-09-11", 15);
+    const variants = [
+      {
+        full_name: "  Tom Grywnow  ",
+        first_name: "Ignored",
+        last_name: "Name",
+        display_name: "Display",
+      },
+      {
+        full_name: " ",
+        first_name: " Tom ",
+        last_name: " Grywnow ",
+        display_name: "Display",
+      },
+      { first_name: null, last_name: "Grywnow" },
+      { first_name: "", last_name: null, display_name: " Tom Display " },
+      { full_name: null, display_name: null },
+    ];
+    expect(
+      variants.map((fields) =>
+        birthdayName(parseEvents([{ ...event, ...fields }])[0]),
+      ),
+    ).deep.eq(["Tom Grywnow", "Tom Grywnow", "Grywnow", "Tom Display", "Tom"]);
+    expect(event.title).eq("Tom");
+  });
+  it("never derives a birth year from the occurrence, even when the age is known", () => {
+    for (const birth_date of [undefined, null, "", "invalid"]) {
+      const event = { ...birthday(1, "Tom", "2026-09-11", 15), birth_date };
+      expect(birthdayBirthDate(event, zone)).eq(undefined);
+      expect(birthdayItem(event, today, zone, "dd.MM.yyyy")).include({
+        age: 15,
+        birthDate: "",
+      });
+      expect(summary([event])[0]).include({ age: 15, birthDate: "" });
+    }
+    const event = {
+      ...birthday(1, "Tom", "2026-09-11", null),
+      birth_date: "2011-09-11",
+    };
+    expect(birthdayItem(event, today, zone, "dd.MM.yyyy")).include({
+      age: null,
+      birthDate: "11.09.2011",
+    });
+    expect(summary([event])[0].age).eq(null);
+  });
+  it("sorts supplied occurrences from today, deduplicates identities, and excludes expired dates", () => {
+    const events = [
       birthday(1, "Gestern", "2026-09-04", 39),
+      birthday(1, "Gestern", "2027-09-04", 40),
       birthday(2, "Morgen", "2026-09-06", 40),
       birthday(3, "Heute", "2026-09-05", 50),
-    ]);
-    expect(items.map((item) => item.daysUntil)).deep.eq([0, 1, 364]);
-    expect(items[2]).include({
+      birthday(3, "Heute", "2027-09-05", 51),
+    ];
+    expect(summary(events).map((item) => item.daysUntil)).deep.eq([0, 1, 364]);
+    expect(summary(events)[2]).include({
       age: 40,
       date: "2027-09-04",
-      birthDate: "04.09.1987",
+      birthDate: "",
     });
+    expect(summary([events[0]])).deep.eq([]);
   });
-  it("deduplicates annual occurrences without merging distinct people sharing a name", () => {
-    const items = summary([
-      birthday(1, "Rebecca", "2025-09-05", 38),
-      birthday(1, "Rebecca", "2026-09-05", 39),
-      birthday(2, "Rebecca", "2026-09-05", 40),
-    ]);
-    expect(items).length(2);
-    expect(items.map((item) => item.age)).deep.eq([39, 40]);
-  });
-  it("joins the nearest day's people into one message", () => {
-    expect(
-      birthdaySummaryText(
-        summary([
-          birthday(1, "Rebecca", "2026-09-05", 39),
-          birthday(2, "XY", "2026-09-05", 40),
-          birthday(3, "ABC", "2026-09-05", 50),
-          birthday(4, "Später", "2026-09-08", 12),
-        ]),
-      ),
-    ).eq("Heute werden ABC 50, Rebecca 39 und XY 40.");
-    expect(
-      birthdaySummaryText(summary([birthday(1, "Rebecca", "2026-09-08", 39)])),
-    ).eq("In 3 Tagen wird Rebecca 39.");
-    expect(birthdaySummaryText([])).eq("");
-  });
-  it("keeps unknown ages unknown instead of inventing a birth year", () => {
-    const event = birthday(1, "Rebecca", "2026-09-05", null);
-    expect(birthdayBirthDate(event, zone)).eq(undefined);
-    expect(summary([event])[0]).include({ age: null, birthDate: "" });
-    expect(birthdaySummaryText(summary([event]))).eq(
-      "Heute hat Rebecca Geburtstag.",
-    );
-  });
-  it("uses the explicit birthday for leap years and accounts for DST in day distances", () => {
-    const event = {
-      ...birthday(1, "Leap", "2026-02-28", 22),
-      birth_date: "2004-02-29",
-    };
-    expect(
-      summary([event], DateTime.fromISO("2027-03-01", { zone }))[0],
-    ).include({ date: "2028-02-29", age: 24, birthDate: "29.02.2004" });
-    expect(
-      summary(
-        [birthday(2, "DST", "2026-03-30", 20)],
-        DateTime.fromISO("2026-03-28", { zone }),
-      )[0].daysUntil,
-    ).eq(2);
-  });
-});
-
-describe("Birthday source identity and API leap-day handling", () => {
-  it("keeps manual, child and person IDs separate even for identical names and dates", () => {
+  it("keeps source identities and yearly calendar occurrences separate", () => {
     const base = birthday(1, "Alex", "2026-09-05", 40);
     const events = [
       { ...base, source: "birthday" },
       { ...base, id: "child:1", source: "child", child_id: 1 },
       { ...base, id: "person:1", source: "person", user_id: 1 },
     ];
-    expect(summary(events)).length(3);
     expect(summary([...events, ...events])).length(3);
+    const nextYear = {
+      ...events[1],
+      ...birthday("child:1", "Alex", "2027-09-05", 41),
+    };
+    expect(occurrenceKey(events[1])).not.eq(occurrenceKey(nextYear));
+    expect(uniqueOccurrences([...events, nextYear, ...events])).length(4);
   });
-  it("uses a child's authoritative date when projecting beyond a clamped occurrence", () => {
+  it("joins the nearest day's full names and handles unknown ages", () => {
+    const events = [
+      {
+        ...birthday(1, "Rebecca", "2026-09-05", 39),
+        full_name: "Rebecca Bradtke",
+      },
+      birthday(2, "XY", "2026-09-05", 40),
+      birthday(3, "Später", "2026-09-08", 50),
+    ];
+    expect(birthdaySummaryText(summary(events))).eq(
+      "Heute werden Rebecca Bradtke 39 und XY 40.",
+    );
+    expect(
+      birthdaySummaryText(summary([birthday(1, "Tom", "2026-09-08", null)])),
+    ).eq("In 3 Tagen hat Tom Geburtstag.");
+    expect(birthdaySummaryText([])).eq("");
+  });
+  it("preserves server leap-day dates, real birth dates and local-day distances across DST", () => {
     const event = {
-      ...birthday(1, "Rika", "2027-02-28", 15),
-      id: "child:1",
+      ...birthday("child:1", "Tom", "2027-02-28", 15),
       source: "child",
       child_id: 1,
+      birth_date: "2012-02-29",
     };
-    const items = upcomingBirthdays(
-      [event],
-      DateTime.fromISO("2027-03-01", { zone }),
-      zone,
-      "dd.MM.yyyy",
-      [
-        {
-          id: 1,
-          name: "Rika",
-          default_responsible_user_id: null,
-          birth_date: "2012-02-29",
-        },
-      ],
-    );
-    expect(items[0]).include({
-      birthDate: "29.02.2012",
-      date: "2028-02-29",
+    const next = {
+      ...event,
+      starts_at: "2028-02-28T23:00:00Z",
+      ends_at: "2028-02-29T23:00:00Z",
       age: 16,
-      daysUntil: 365,
-    });
+    };
+    expect(
+      summary([event, next], DateTime.fromISO("2027-03-01", { zone }))[0],
+    ).include({ date: "2028-02-29", age: 16, birthDate: "29.02.2012" });
+    expect(
+      summary([event], DateTime.fromISO("2027-02-28T18:00", { zone }))[0],
+    ).include({ date: "2027-02-28", daysUntil: 0, birthDate: "29.02.2012" });
+    expect(
+      summary(
+        [birthday(1, "DST", "2026-03-30", 20)],
+        DateTime.fromISO("2026-03-28", { zone }),
+      )[0].daysUntil,
+    ).eq(2);
   });
 });

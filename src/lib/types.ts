@@ -70,6 +70,10 @@ export interface BaseCalendarEvent {
   [key: string]: unknown;
 }
 export interface CalendarEvent extends BaseCalendarEvent {
+  first_name?: string | null;
+  last_name?: string | null;
+  display_name?: string | null;
+  full_name?: string | null;
   description?: string | null;
   note?: string | null;
   custom_type_label?: string | null;

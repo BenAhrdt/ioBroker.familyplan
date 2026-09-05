@@ -341,16 +341,17 @@ export class FamilienPlan extends utils.Adapter {
       this.childBirthdayEvents = events.filter(
         (event) => event.event_type.toLocaleUpperCase() === "BIRTHDAY",
       );
+      const birthdayTo = now.startOf("day").plus({ years: 1, days: 1 });
       if (
         status.scopes.includes("read:birthdays") &&
-        this.cfg.rangePeriod !== "year" &&
-        children.some(
-          (child) =>
-            !this.childBirthDate(child) && !this.findChildBirthday(child),
-        )
+        to < birthdayTo &&
+        (this.cfg.birthdaysEnabled ||
+          children.some(
+            (child) =>
+              !this.childBirthDate(child) && !this.findChildBirthday(child),
+          ))
       ) {
         try {
-          const birthdayTo = now.startOf("day").plus({ days: 365 });
           let yearly: CalendarEvent[];
           try {
             yearly = await this.fetchCalendarRange(
@@ -1182,6 +1183,11 @@ export class FamilienPlan extends utils.Adapter {
       : undefined;
     await this.writeFields(root, {
       name: item?.name ?? "",
+      first_name: event?.first_name ?? "",
+      last_name: event?.last_name ?? "",
+      display_name: event?.display_name ?? "",
+      full_name: event?.full_name ?? "",
+      birth_date: event?.birth_date ?? null,
       age: item?.age ?? null,
       birthDate: item?.birthDate ?? "",
       text: item
@@ -2073,6 +2079,11 @@ export class FamilienPlan extends utils.Adapter {
       lastUpdated: "Letzte Aktualisierung",
       updatedAt: "Aktualisiert am",
       birthDate: "Geburtsdatum",
+      birth_date: "Geburtsdatum (API)",
+      first_name: "Vorname",
+      last_name: "Nachname",
+      display_name: "Anzeigename",
+      full_name: "Vollständiger Name",
       age: "Alter",
       text: "Text",
       defaultResponsibleUserId: "Standardmäßig betreuende Person (ID)",

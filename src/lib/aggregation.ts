@@ -1,5 +1,5 @@
 import { DateTime, Interval } from "luxon";
-import { birthdayBirthDate, birthdayIdentity } from "./birthdays";
+import { birthdayBirthDate, birthdayIdentity, birthdayName } from "./birthdays";
 import type {
   BirthdayAggregation,
   CalendarEvent,
@@ -198,11 +198,11 @@ export function birthdayItem(
 ): BirthdayAggregation {
   const date = DateTime.fromISO(event.starts_at).setZone(zone);
   const birth = birthdayBirthDate(event, zone, knownBirthDate);
-  const age = event.age ?? (birth ? date.year - birth.year : null);
+  const age = event.age ?? null;
   const birthDate = birth?.toFormat(dateFormat) ?? "";
   return {
     id: event.id,
-    name: event.title ?? "",
+    name: birthdayName(event),
     birthDate,
     date: date.toISODate()!,
     age,
