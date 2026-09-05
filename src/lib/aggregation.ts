@@ -7,38 +7,28 @@ import type {
   WasteAggregation,
 } from "./types";
 
-const normalizedPersonName = (value: string): string =>
-  value.normalize("NFKC").trim().toLocaleLowerCase().replace(/\s+/g, " ");
-
+/** Only an explicit child ID can associate birthday data with a child. */
 export function findBirthdayForChild(
   events: CalendarEvent[],
   child: Child,
 ): CalendarEvent | undefined {
-  const birthdays = events.filter(
-    (event) => event.event_type.toLocaleUpperCase() === "BIRTHDAY",
+  return events.find(
+    (event) =>
+      event.event_type.toUpperCase() === "BIRTHDAY" &&
+      event.child_id === child.id,
   );
+}
+
+/** The next explicit start can be later than the end of the current stay. */
+export function nextLocationChange(
+  location: { current_until: string | null; next_change_at: string | null },
+  now: DateTime,
+): string {
   return (
-    birthdays.find((event) => event.child_id === child.id) ??
-    birthdays.find(
-      (event) =>
-        typeof event.child_name === "string" &&
-        normalizedPersonName(event.child_name) ===
-          normalizedPersonName(child.name),
-    ) ??
-    birthdays.find(
-      (event) =>
-        normalizedPersonName(event.title ?? "") ===
-        normalizedPersonName(child.name),
-    ) ??
-    birthdays.find((event) => {
-      const title = normalizedPersonName(event.title ?? "");
-      const name = normalizedPersonName(child.name);
-      return (
-        title.startsWith(`${name} `) ||
-        title.endsWith(` ${name}`) ||
-        title.includes(` ${name} `)
-      );
-    })
+    [location.current_until, location.next_change_at]
+      .map((value) => futureTimestamp(value, now))
+      .filter(Boolean)
+      .sort((a, b) => Date.parse(a) - Date.parse(b))[0] ?? ""
   );
 }
 
@@ -268,4 +258,15 @@ export function renderRelative(
       ),
     )
     .join(separator);
+}
+
+/** Preserve the complete API event and provide a description for older responses. */
+export function completeEvent(event: CalendarEvent): CalendarEvent {
+  return {
+    ...event,
+    description:
+      event.description === undefined
+        ? (event.note ?? null)
+        : event.description,
+  };
 }

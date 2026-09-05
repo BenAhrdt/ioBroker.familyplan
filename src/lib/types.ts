@@ -24,6 +24,7 @@ export interface Child {
   id: number;
   name: string;
   default_responsible_user_id: number | null;
+  age?: number | null;
   birth_date?: string | null;
 }
 
@@ -68,6 +69,7 @@ export interface BaseCalendarEvent {
   [key: string]: unknown;
 }
 export interface CalendarEvent extends BaseCalendarEvent {
+  description?: string | null;
   note?: string | null;
   custom_type_label?: string | null;
   all_day?: boolean;

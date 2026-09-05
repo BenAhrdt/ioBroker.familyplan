@@ -329,10 +329,10 @@ describe("aggregations", () => {
       "2026-09-05T12:00:01+02:00",
     );
   });
-  it("matches a child's birthday by child_name and ignores event type casing", () => {
+  it("matches a child's birthday by child ID and ignores event type casing", () => {
     const birthday = event({
       event_type: "birthday",
-      child_id: null,
+      child_id: 4,
       child_name: " Rika ",
       title: "Geburtstag",
       age: 12,
@@ -345,7 +345,7 @@ describe("aggregations", () => {
       }),
     ).eq(birthday);
   });
-  it("matches a child's name embedded in a birthday title", () => {
+  it("does not infer a child association from a birthday title", () => {
     const birthday = event({
       event_type: "BIRTHDAY",
       child_id: null,
@@ -358,7 +358,7 @@ describe("aggregations", () => {
         name: "Rika",
         default_responsible_user_id: null,
       }),
-    ).eq(birthday);
+    ).eq(undefined);
   });
   it("merges adjacent generated default stays but not explicit stays", () => {
     const first = event({

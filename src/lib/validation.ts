@@ -20,6 +20,7 @@ const childSchema = z
     id: z.number().int(),
     name: z.string(),
     default_responsible_user_id: z.number().int().nullable().default(null),
+    age: z.number().int().nonnegative().nullable().optional(),
     birth_date: z.string().nullable().optional(),
   })
   .passthrough();
@@ -37,6 +38,7 @@ const eventSchema = z
     event_type: z.string().min(1),
     id: z.union([z.string(), z.number()]).nullable(),
     title: z.string().nullable(),
+    description: z.string().nullable().optional(),
     note: z.string().nullable().optional(),
     starts_at: isoDate,
     ends_at: isoDate,

@@ -65,6 +65,12 @@ The adapter uses the following integration endpoints:
 
 Authentication is sent exclusively in the `Authorization: Bearer …` header. The API key is never added to a URL.
 
+### FamilienPlan 0.1.95 field mapping
+
+API `title` is used unchanged, including standard stays. Occurrence folders (`*.next`, `*.nextAfter`, and `birthdays.nextSignificant`) expose `description`; their existing `note` state mirrors it for compatibility. Both are cleared when a description is null, empty, or absent without a legacy note. JSON retains explicit null descriptions and all other API fields. Birthday events without optional fields remain valid.
+
+Location forecasts consider both `current_until` and `next_change_at`: the latter only identifies the next confirmed explicit stay. Calendar-based responsibility changes are compared by user ID. Calendar requests use encoded timestamps and chunks of 180 days, below the API limit of 366 days. Restricted calendar responses are used as supplied; children are only requested with `read:children`.
+
 ## Objects
 
 ```text
@@ -89,7 +95,7 @@ Every event-type folder provides summaries, month groups, `next`, and `nextAfter
 
 ### Children and custody changes
 
-Each `children.<name>` folder exposes the child's `name`, `birthDate`, `age`, and a JSON summary. Birthdays are matched by child ID, `child_name`, or the child's name in the birthday title. Calendar responses containing `age: null` or `birth_date: null` remain valid. If the children endpoint does not provide a birth date, the adapter derives it from a matching birthday event; the `age` state then represents the age at the current date.
+Each `children.<name>` folder exposes the child's `name`, `birthDate`, `age`, and a JSON summary preserving the API fields. FamilienPlan 0.1.95 supplies neither birth dates nor ages through `/children`; its birthday events have no child ID. Consequently `birthDate` is empty and `age` is `null` (unknown) for these children. The adapter only associates birthdays through an explicit `child_id`, never through titles or matching numeric birthday IDs. An API extension supplying `birth_date` on children or `child_id` on birthdays is required to populate these values reliably.
 
 When location retrieval is enabled, `children.<name>.location` contains the current responsible person and `nextChangeAt`; `next` and `nextAfter` contain the following custody periods. These projections are recalculated from the cached `STAY` events during the local minute tick. Consequently, reaching `nextChangeAt` updates the child location without waiting for another API synchronization. An API synchronization is still required to retrieve newly created, edited, or deleted source data from FamilienPlan.
 
@@ -109,7 +115,7 @@ Supported positions are `beforeStart`, `afterStart`, `beforeEnd`, and `afterEnd`
 
 The catch-up/pulse duration defines both how long `active` remains true and how long a missed trigger may be fired late. A persistent SHA-256 key made from the rule, event type, event key, start/end, position, and offset prevents duplicate triggers after a restart.
 
-For robust automation, react to the monotonic `triggers.<rule-id>.count` state. Each rule has an `active` state. Its `event` JSON is written both when the trigger becomes active and when it is reset; the payload's `active` property identifies the transition. `triggers.event` receives these transitions from every rule as a common event stream. Event JSON contains `child_name` instead of the internal `child_id` and includes the appointment `note` when supplied by the API. `lastTriggered`, `lastEventId`, and `scheduledFor` provide additional context.
+For robust automation, react to the monotonic `triggers.<rule-id>.count` state. Each rule has an `active` state. Its `event` JSON is written both when the trigger becomes active and when it is reset; the payload's `active` property identifies the transition. `triggers.event` receives these transitions from every rule as a common event stream. Event JSON preserves all API fields, including `child_id`, and adds `child_name` when available. API titles are preserved. `description` contains the API description, falls back to legacy `note` only when `description` is absent, and is `null` when neither is supplied. Birthday and waste JSON summaries also include the full event alongside their summary fields. `lastTriggered`, `lastEventId`, and `scheduledFor` provide additional context.
 
 ### JavaScript example
 
@@ -163,6 +169,19 @@ npm run dev-server watch
 The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is stored below `.dev-server/` and is not published.
 
 ## Changelog
+
+<!--
+    Placeholder for the next version (at the beginning of the line):
+    ### **WORK IN PROGRESS**
+-->
+
+### **WORK IN PROGRESS**
+
+- (BenAhrdt) Adapt event descriptions to FamilienPlan 0.1.95, preserve API titles and complete event JSON, and clear removed notes.
+- (BenAhrdt) Correct appointment counts and refresh removed or reappearing event groups.
+- (BenAhrdt) Determine custody changes by responsible user IDs and consider the end of the current stay.
+- (BenAhrdt) Respect child-read permissions and report unavailable child ages as unknown without inferring birthday associations from names.
+
 ### 0.1.7 (2026-09-04)
 
 - (BenAhrdt) Add an optional responsible-person filter for `STAY` trigger rules so consecutive custody intervals for the same child do not both match an arrival rule.
@@ -192,3 +211,21 @@ Older changes are available in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 MIT License
 
 Copyright (c) 2026 Ben Schmidt
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -3,12 +3,13 @@ import { DateTime } from "luxon";
 import { FamilienPlanApiClient, ApiError } from "./lib/api-client";
 import {
   birthdayItem,
+  completeEvent,
   dayKey,
   eventsForDay,
   findBirthdayForChild,
-  futureTimestamp,
   isEventActive,
   nextOccurrences,
+  nextLocationChange,
   occurrenceKey,
   parseChildIds,
   renderRelative,
@@ -40,7 +41,10 @@ export class FamilienPlan extends utils.Adapter {
   private childBirthdayEvents: CalendarEvent[] = [];
   private responsibleNames = new Map<number, string>();
   private stayResponsibleNames = new Map<string, string>();
-  private readonly writtenStates = new Map<string, string | number | boolean>();
+  private readonly writtenStates = new Map<
+    string,
+    string | number | boolean | null
+  >();
   private triggerHistory?: Record<string, string>;
   private lastTriggerCheck?: DateTime;
   private lastTriggerCheckPersistedAt?: DateTime;
@@ -258,10 +262,10 @@ export class FamilienPlan extends utils.Adapter {
       }
       const api = this.client();
       const { from, to } = this.queryRange(now, this.cfg);
-      const [status, children] = await Promise.all([
-        this.apiCall("API-Status", () => api.status()),
-        this.apiCall("Kinderliste", () => api.children()),
-      ]);
+      const status = await this.apiCall("API-Status", () => api.status());
+      const children = status.scopes.includes("read:children")
+        ? await this.apiCall("Kinderliste", () => api.children())
+        : [];
       const selected = this.selectedChildIds(this.cfg.childIds);
       let events: CalendarEvent[];
       if (selected.length) {
@@ -293,6 +297,7 @@ export class FamilienPlan extends utils.Adapter {
         (event) => event.event_type.toLocaleUpperCase() === "BIRTHDAY",
       );
       if (
+        status.scopes.includes("read:birthdays") &&
         this.cfg.rangePeriod !== "year" &&
         children.some(
           (child) =>
@@ -532,7 +537,11 @@ export class FamilienPlan extends utils.Adapter {
         JSON.stringify({ from: from.toISO(), to: to.toISO() }),
         true,
       ),
-      this.setStateAsync("calendar.json", JSON.stringify(events), true),
+      this.setStateAsync(
+        "calendar.json",
+        JSON.stringify(events.map(completeEvent)),
+        true,
+      ),
       this.setStateAsync("calendar.count", events.length, true),
       this.setStateAsync("calendar.lastUpdated", now.toISO(), true),
     ]);
@@ -659,20 +668,27 @@ export class FamilienPlan extends utils.Adapter {
       const birthday = this.findChildBirthday(child);
       const rawChild = child as Child & Record<string, unknown>;
       const apiBirthDate = this.childBirthDate(rawChild);
-      const birthdayData = birthday
-        ? birthdayItem(birthday, now, this.cfg.timezone, "yyyy-MM-dd")
-        : undefined;
+      const birthdayData =
+        birthday && (birthday.birth_date || typeof birthday.age === "number")
+          ? birthdayItem(birthday, now, this.cfg.timezone, "yyyy-MM-dd")
+          : undefined;
       const birthDate = apiBirthDate
         ? DateTime.fromISO(apiBirthDate).toFormat("yyyy-MM-dd")
         : (birthdayData?.birthDate ?? "");
       const parsedBirthDate = DateTime.fromISO(birthDate);
-      const age =
-        typeof birthday?.age === "number"
-          ? birthday.age
-          : parsedBirthDate.isValid
-            ? Math.floor(now.diff(parsedBirthDate, "years").years)
-            : 0;
+      const age = parsedBirthDate.isValid
+        ? Math.max(
+            0,
+            Math.floor(
+              now
+                .setZone(this.cfg.timezone)
+                .startOf("day")
+                .diff(parsedBirthDate, "years").years,
+            ),
+          )
+        : (child.age ?? null);
       const childJson = {
+        ...child,
         name: child.name,
         birthDate,
         age,
@@ -696,7 +712,7 @@ export class FamilienPlan extends utils.Adapter {
               loc.responsible_name,
             );
           }
-          const nextChangeAt = futureTimestamp(loc.next_change_at, now);
+          const nextChangeAt = nextLocationChange(loc, now);
           const locationJson = {
             responsibleName: loc.responsible_name ?? "",
             nextChangeAt,
@@ -738,7 +754,9 @@ export class FamilienPlan extends utils.Adapter {
               effectiveAt,
               now,
             );
-            forecastAt = futureTimestamp(forecast?.next_change_at, now);
+            forecastAt = forecast
+              ? nextLocationChange(forecast, DateTime.fromISO(effectiveAt))
+              : "";
           }
         } catch (error) {
           this.log.warn(
@@ -774,23 +792,30 @@ export class FamilienPlan extends utils.Adapter {
       const root = this.childRoot(child, children);
       const birthday = this.findChildBirthday(child);
       const apiBirthDate = this.childBirthDate(child);
-      const birthdayData = birthday
-        ? birthdayItem(birthday, now, this.cfg.timezone, "yyyy-MM-dd")
-        : undefined;
+      const birthdayData =
+        birthday && (birthday.birth_date || typeof birthday.age === "number")
+          ? birthdayItem(birthday, now, this.cfg.timezone, "yyyy-MM-dd")
+          : undefined;
       const birthDate = apiBirthDate
         ? DateTime.fromISO(apiBirthDate).toFormat("yyyy-MM-dd")
         : (birthdayData?.birthDate ?? "");
       const parsedBirthDate = DateTime.fromISO(birthDate);
       const age = parsedBirthDate.isValid
-        ? Math.floor(now.diff(parsedBirthDate, "years").years)
-        : typeof birthday?.age === "number"
-          ? birthday.age
-          : 0;
+        ? Math.max(
+            0,
+            Math.floor(
+              now
+                .setZone(this.cfg.timezone)
+                .startOf("day")
+                .diff(parsedBirthDate, "years").years,
+            ),
+          )
+        : (child.age ?? null);
       await this.writeFields(root, {
         name: child.name,
         birthDate,
         age,
-        json: JSON.stringify({ name: child.name, birthDate, age }),
+        json: JSON.stringify({ ...child, name: child.name, birthDate, age }),
       });
 
       if (!this.cfg.fetchLocations) {
@@ -813,15 +838,14 @@ export class FamilienPlan extends utils.Adapter {
         continue;
       }
       const changes: CalendarEvent[] = [];
-      let previousName = this.responsibleName(active);
+      let previousResponsibleId = active.responsible_user_id;
       for (const stay of stays) {
         if (DateTime.fromISO(stay.starts_at).toMillis() <= now.toMillis()) {
           continue;
         }
-        const name = this.responsibleName(stay);
-        if (name !== previousName) {
+        if (stay.responsible_user_id !== previousResponsibleId) {
           changes.push(stay);
-          previousName = name;
+          previousResponsibleId = stay.responsible_user_id;
         }
       }
       const lr = `${root}.location`;
@@ -873,7 +897,10 @@ export class FamilienPlan extends utils.Adapter {
           ),
       ),
     };
-    const groups = new Map<string, CalendarEvent[]>([["appointments", events]]);
+    const groups = new Map<string, CalendarEvent[]>([
+      ["appointments", []],
+      ["events.appointment", []],
+    ]);
     for (const event of events) {
       const paths = [
         "appointments",
@@ -938,7 +965,9 @@ export class FamilienPlan extends utils.Adapter {
     const data = {
       responsibleName: location?.responsible_name ?? "",
       effectiveAt: location ? effectiveAt : "",
-      nextChangeAt: location?.next_change_at ?? "",
+      nextChangeAt: location
+        ? nextLocationChange(location, DateTime.fromISO(effectiveAt))
+        : "",
       lastUpdated: now.toISO()!,
     };
     await this.writeFields(root, {
@@ -975,7 +1004,8 @@ export class FamilienPlan extends utils.Adapter {
         ? Math.floor(start.startOf("day").diff(now.startOf("day"), "days").days)
         : 0,
       allDay: Boolean(event?.all_day),
-      note: event?.note ?? "",
+      description: event ? (completeEvent(event).description ?? "") : "",
+      note: event ? (completeEvent(event).description ?? "") : "",
       json: JSON.stringify(event ? this.displayEvent(event) : {}),
     };
     if (includeChild) {
@@ -1098,20 +1128,23 @@ export class FamilienPlan extends utils.Adapter {
     await this.writeFields("birthdays.summary", {
       count: all.length,
       json: JSON.stringify(
-        all.map((event) =>
-          birthdayItem(
+        all.map((event) => ({
+          ...birthdayItem(
             event,
             now,
             this.cfg.timezone,
             this.cfg.birthdayDateFormat,
           ),
-        ),
+          ...this.displayEvent(event),
+        })),
       ),
       jsonSignificant: JSON.stringify(
-        all.filter((event) => {
-          const age = Number(event.age ?? 0);
-          return age === 18 || (age >= 20 && age % 10 === 0);
-        }),
+        all
+          .filter((event) => {
+            const age = Number(event.age ?? 0);
+            return age === 18 || (age >= 20 && age % 10 === 0);
+          })
+          .map((event) => this.displayEvent(event)),
       ),
     });
     for (let month = 1; month <= 12; month++) {
@@ -1125,14 +1158,15 @@ export class FamilienPlan extends utils.Adapter {
       await this.writeFields(root, {
         count: monthEvents.length,
         json: JSON.stringify(
-          monthEvents.map((event) =>
-            birthdayItem(
+          monthEvents.map((event) => ({
+            ...birthdayItem(
               event,
               now,
               this.cfg.timezone,
               this.cfg.birthdayDateFormat,
             ),
-          ),
+            ...this.displayEvent(event),
+          })),
         ),
       });
     }
@@ -1205,7 +1239,12 @@ export class FamilienPlan extends utils.Adapter {
     );
     await this.writeFields("waste", {
       count: mapped.length,
-      json: JSON.stringify(mapped.map(({ item }) => item)),
+      json: JSON.stringify(
+        mapped.map(({ event, item }) => ({
+          ...item,
+          ...this.displayEvent(event),
+        })),
+      ),
     });
     const currentTypeRoots = new Set<string>();
     for (const wasteType of new Set(mapped.map(({ item }) => item.wasteType))) {
@@ -1233,7 +1272,12 @@ export class FamilienPlan extends utils.Adapter {
       );
       await this.writeFields(root, {
         count: entries.length,
-        json: JSON.stringify(entries.map(({ item }) => item)),
+        json: JSON.stringify(
+          entries.map(({ event, item }) => ({
+            ...item,
+            ...this.displayEvent(event),
+          })),
+        ),
       });
     }
     for (const id of await this.folderIds("waste.type")) {
@@ -1251,16 +1295,25 @@ export class FamilienPlan extends utils.Adapter {
     for (const id of folders) {
       if (id === "events.school_event" || id === "events.stay") {
         // Migration from the former API-oriented top-level structure.
-        await this.delObjectAsync(id, { recursive: true });
+        await this.deleteEventGroup(id);
       } else if (id.includes(".items.")) {
         // Legacy volatile event-ID objects are replaced by stable projections.
-        await this.delObjectAsync(id, { recursive: true });
+        await this.deleteEventGroup(id);
       } else if (/\.(?:month|next|nextAfter)(?:\.|$)/.test(id)) {
         // These are stable projection folders, not event groups.
         continue;
       } else if (!currentGroups.has(id)) {
         // A category no longer returned by the API must not retain old events.
-        await this.delObjectAsync(id, { recursive: true });
+        await this.deleteEventGroup(id);
+      }
+    }
+  }
+
+  private async deleteEventGroup(id: string): Promise<void> {
+    await this.delObjectAsync(id, { recursive: true });
+    for (const key of this.writtenStates.keys()) {
+      if (key === id || key.startsWith(`${id}.`)) {
+        this.writtenStates.delete(key);
       }
     }
   }
@@ -1333,13 +1386,7 @@ export class FamilienPlan extends utils.Adapter {
         };
       })
       .filter((rule) => Boolean(rule.name));
-    const triggerEvents = events.map((event) => ({
-      ...event,
-      child_name: this.childName(event.child_id),
-      ...(event.event_type.toLocaleUpperCase() === "STAY"
-        ? { responsible_name: this.responsibleName(event) }
-        : {}),
-    }));
+    const triggerEvents = events.map((event) => this.displayEvent(event));
     const ruleSegments = stableSegments(rules.map((rule) => rule.name));
     const ruleRoot = (name: string): string =>
       `triggers.${ruleSegments.get(name) ?? normalizeId(name)}`;
@@ -1533,7 +1580,7 @@ export class FamilienPlan extends utils.Adapter {
       !this.lastTriggerCheckPersistedAt ||
       now.diff(this.lastTriggerCheckPersistedAt, "seconds").seconds >= 60
     ) {
-      await this.writeStateIfChanged("info.lastTriggerCheck", now.toISO()!);
+      await this.writeStateIfChanged("info.lastTriggerCheck", now.toISO());
       this.lastTriggerCheckPersistedAt = now;
     }
     this.lastTriggerCheck = now;
@@ -1631,32 +1678,20 @@ export class FamilienPlan extends utils.Adapter {
     return "";
   }
   private displayTitle(event: CalendarEvent): string {
-    if (
-      event.event_type === "STAY" &&
-      event.generated === true &&
-      event.source === "default"
-    ) {
-      const responsible = this.responsibleName(event);
-      return responsible
-        ? `Standard (Bei ${responsible})`
-        : "Standardbetreuung";
-    }
     return event.title ?? "";
   }
   private displayEvent(event: CalendarEvent): CalendarEvent {
     const responsibleName =
       event.event_type === "STAY" ? this.responsibleName(event) : "";
     const displayed: CalendarEvent = {
-      ...event,
-      title: this.displayTitle(event),
+      ...completeEvent(event),
       starts_at: this.localIso(event.starts_at),
       ends_at: this.localIso(event.ends_at),
       ...(event.child_id != null
-        ? { child_name: this.childName(event.child_id) }
+        ? { child_name: event.child_name ?? this.childName(event.child_id) }
         : {}),
       ...(responsibleName ? { responsible_name: responsibleName } : {}),
     };
-    delete displayed.child_id;
     return displayed;
   }
   private async loadStayResponsibleNames(
@@ -1726,7 +1761,7 @@ export class FamilienPlan extends utils.Adapter {
   }
   private async writeFields(
     root: string,
-    data: Record<string, string | number | boolean>,
+    data: Record<string, string | number | boolean | null>,
   ): Promise<void> {
     for (const [key, value] of Object.entries(data)) {
       const localizedValue = this.localizeDateState(key, value);
@@ -1734,7 +1769,12 @@ export class FamilienPlan extends utils.Adapter {
       if (this.writtenStates.get(id) === localizedValue) {
         continue;
       }
-      const type = typeof localizedValue as StateType;
+      const type =
+        localizedValue === null
+          ? key === "age"
+            ? "number"
+            : "string"
+          : (typeof localizedValue as StateType);
       const role =
         key === "json" ||
         key === "event" ||
@@ -1753,7 +1793,7 @@ export class FamilienPlan extends utils.Adapter {
   }
   private async writeStateIfChanged(
     id: string,
-    value: string | number | boolean,
+    value: string | number | boolean | null,
   ): Promise<void> {
     if (this.writtenStates.get(id) === value) {
       return;
@@ -1763,8 +1803,8 @@ export class FamilienPlan extends utils.Adapter {
   }
   private localizeDateState(
     key: string,
-    value: string | number | boolean,
-  ): string | number | boolean {
+    value: string | number | boolean | null,
+  ): string | number | boolean | null {
     if (
       typeof value !== "string" ||
       ![
@@ -1820,6 +1860,7 @@ export class FamilienPlan extends utils.Adapter {
       name: "Name",
       title: "Titel",
       note: "Notiz",
+      description: "Beschreibung",
       type: "Typ",
       eventType: "Terminart",
       customTypeLabel: "Eigene Terminart",
