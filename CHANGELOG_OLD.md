@@ -2,6 +2,11 @@
 
 There are no older releases yet. Current release notes are maintained in the
 [README changelog](README.md#changelog).
+## 0.1.5 (2026-09-04)
+
+- (BenAhrdt) Fix child location projections by querying the current point in time and suppressing expired `nextChangeAt` values.
+- (BenAhrdt) Populate child `birthDate` and `age` states more reliably by matching birthday events through child IDs or names and deriving the age from the birth date when necessary.
+
 ## 0.1.4 (2026-09-04)
 
 - (BenAhrdt) Expand the English documentation with step-by-step instructions for connecting ioBroker to the FamilienPlan API.

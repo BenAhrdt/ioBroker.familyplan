@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "familyplan",
-    "version": "0.1.9",
+    "version": "0.1.10",
     "news": {
+      "0.1.10": {
+        "en": "Add configurable waste reminders with combined collection messages, persistent acknowledgement, and automatic expiry.\nSort birthday summaries by the next anniversary without negative day counts and add combined messages and nearest-day person arrays.\nDisplay child birth dates and current ages and replace the default responsible user ID with the resolved name in child JSON.\nSupport FamilienPlan 0.1.99 child and person birthdays, string IDs, annual occurrences, and leap-day handling while retaining compatibility with older responses.",
+        "de": "Fügen Sie Müllerinnerungen mit Sammelmeldungen, ständiger Bestätigung und automatischem Ablauf hinzu.\nSortiere Geburtstage ohne negative Tageszahlen nach dem nächsten Jahrestag und füge Nachrichten und Personenfelder hinzu.\nZeigt Geburtsdatum und Alter an und ersetzt die Standard-Nutzerkennung durch den aufgelösten Namen in Kind-JSON.\nUnterstützen Sie FamilienPlan 0.1.99 Kinder- und Personengeburtstage, String-IDs, Jahreszahlen und Schalttage, aber kompatibel mit älteren Antworten.",
+        "ru": "Добавьте настраиваемые напоминания об отходах с комбинированными сообщениями о сборе, постоянным подтверждением и автоматическим истечением срока действия.\nСортируйте сводки дней рождения по следующей годовщине без отрицательного количества дней и добавляйте комбинированные сообщения и массивы ближайших пользователей.\nОтображайте даты рождения и текущий возраст детей и замените идентификатор ответственного пользователя по умолчанию разрешенным именем в дочернем JSON.\nПоддерживайте FamilienPlan 0.1.99 дни рождения детей и людей, строковые идентификаторы, ежегодные события и обработку високосных дней, сохраняя совместимость со старыми ответами.",
+        "pt": "Adicione lembretes de lixo configuráveis com mensagens de coleta, confirmação persistente e validade automática.\nClassifique resumos por aniversário sem contar dias negativos e adicione mensagens combinadas e matrizes de pessoas do dia mais próximo.\nExiba a data de nascimento e a idade atual da criança e substitua a ID padrão pelo nome resolvido no JSON.\nApoie aniversários de crianças e pessoas, IDs de string, ocorrências anuais e tratamento em dias bissextos do FamilienPlan, mantendo a compatibilidade com respostas antigas.",
+        "nl": "Voeg configureerbare afvalherinneringen toe met gecombineerde inzamelingsberichten, permanente bevestiging en automatische vervaldatum.\nSorteer verjaardagsoverzichten op de volgende verjaardag zonder negatieve dagtellingen en voeg gecombineerde berichten en arrays toe die zich het dichtst bij de dag bevinden.\nGeef de geboortedata en de huidige leeftijden van kinderen weer en vervang de standaard verantwoordelijke gebruikersnaam door de opgeloste naam in JSON voor kinderen.\nOndersteun FamilienPlan 0.1.99 verjaardagen van kinderen en personen, stringID's, jaarlijkse gebeurtenissen en verwerking van schrikkeldagen, met behoud van compatibiliteit met oudere antwoorden.",
+        "fr": "Ajoutez des rappels de déchets configurables avec messages de collecte combinés, accusé de réception et expiration automatique.\nTriez les résumés des anniversaires par anniversaire suivant sans décompte négatif et ajoutez des messages combinés et des listes de personnes les plus proches.\nAffichez la date de naissance et l'âge actuel des enfants et remplacez l'identifiant responsable par défaut par le nom résolu en JSON.\nPrenez en charge FamilienPlan 0.1.99 les anniversaires, les ID de chaîne, les occurrences annuelles et la gestion des jours bissextiles, tout en restant compatible avec les anciennes réponses.",
+        "it": "Aggiunga promemoria rifiuti configurabili con messaggi combinati, conferma permanente e scadenza automatica.\nOrdina i riepiloghi dei compleanni in base al prossimo anniversario e aggiungi i messaggi e le persone più vicine.\nMostra la data di nascita e l'età attuale e sostituisce l'ID utente responsabile predefinito con il nome risolto in JSON\nSostenga FamilienPlan 0.1.99 compleanni e persone, stringhe di ID, ricorrenze annuali e bisestili, pur mantenendo la compatibilità con le risposte precedenti.",
+        "es": "Añada recordatorios de residuos configurables con mensajes de recogida, acuse de recibo persistente y caducidad automática.\nOrdene los resúmenes de cumpleaños por aniversario sin contar días negativos y añada mensajes combinados y listas de personas del día más cercano.\nMuestre la fecha de nacimiento y la edad actual del niño y sustituya el ID de usuario responsable por el nombre resuelto en JSON infantil.\nSoporta FamilienPlan 0.1.99 cumpleaños de niños y personas, identificadores de cadenas, eventos anuales y gestión de días bisiestos, manteniendo la compatibilidad con respuestas antiguas.",
+        "pl": "Dodaj konfigurowalne przypomnienia o odpadach z połączonymi komunikatami o zbieraniu, trwałym potwierdzeniem i automatycznym wygaśnięciem.\nSortuj podsumowania urodzin według następnej rocznicy bez liczenia negatywnych dni i dodawaj połączone wiadomości i tablice osób najbliższego dnia.\nWyświetl daty urodzenia dziecka i aktualny wiek oraz zastąp domyślny identyfikator odpowiedzialnego użytkownika rozwiązaną nazwą w podrzędnym JSON.\nObsługa urodzin dziecka i osób FamilienPlan 0.1.99, identyfikatorów łańcuchów znaków, rocznych zdarzeń i obsługi dnia skokowego przy zachowaniu zgodności ze starszymi odpowiedziami.",
+        "uk": "Додайте настроювані нагадування про відходи з комбінованими повідомленнями про збір, постійним підтвердженням та автоматичним закінченням терміну дії.\nСортуйте резюме днів народження за наступною річницею без від'ємних підрахунків днів та додайте комбіновані повідомлення та масиви людей найближчого дня.\nВідображати дати народження дитини та поточний вік та замінити ідентифікатор відповідального користувача за замовчуванням на вирішене ім'я у дочірньому JSON.\nПідтримуйте FamilienPlan 0.1.99 дні народження дітей та осіб, ідентифікатори рядків, щорічні випадки та обробку стрибкових днів, зберігаючи сумісність із попередніми відповідями.",
+        "zh-cn": "添加可配置的废弃物提醒，包括组合收集消息、持续确认和自动到期。\n按下一个周年纪念日对生日摘要进行排序，不含负天数，并添加组合消息和最近一天的人物阵列。\n显示孩子的出生日期和当前年龄，并将默认的负责用户 ID 替换为孩子 JSON 中的解析名称。\n支持 FamilienPlan 0.1.99 儿童和个人的生日、字符串 ID、年度发生次数和零日处理，同时保持与旧回复的兼容性。"
+      },
       "0.1.9": {
         "en": "Redesign configuration pages with grouped sections and expandable trigger rules.\nAdd exact/contains title and description filters, selectable trigger-length units, and a separate catch-up window.\nSupport unlimited trigger lengths with persistent active state and a manual reset button per rule.",
         "de": "Redesign der Konfigurationsseiten mit Gruppen und erweiterbaren Regeln.\nFügt Filter für exakte Titel und Beschreibung, wählbare Triggerlängen und ein separates Nachholfenster hinzu.\nUnterstützt unbegrenzt lange, permanent aktiv und per Reset-Taste pro Regel.",
@@ -80,19 +93,6 @@
         "pl": "Rozwiń dokumentację w języku angielskim o instrukcje krok po kroku dotyczące podłączania iOBroker do interfejsu API FamilienPlan.",
         "uk": "Розгорніть англійську документацію з покроковими інструкціями щодо підключення IObroker до API FamilienPlan.",
         "zh-cn": "扩展英文文档，提供将 IOBroker 连接到 FamilienPlan API 的分步说明。"
-      },
-      "0.1.3": {
-        "en": "Preserve calendar-event time-zone offsets when calculating trigger times.",
-        "de": "Bewahren Sie bei der Berechnung der Auslösezeiten Zeitzonenoffsets bei.",
-        "ru": "Сохраняйте смещение часовых поясов календарных событий при расчете времени срабатывания.",
-        "pt": "Preserve os desvios de fuso horário do calendário ao calcular os gatilhos.",
-        "nl": "Bewaar de tijdzoneverschuivingen tussen agendagebeurtenissen en gebeurtenissen bij het berekenen van de triggertijden.",
-        "fr": "Préservez les décalages horaires lors du calcul des temps de déclenchement.",
-        "it": "Preserva gli offset di fuso orario tra eventi e calendario nel calcolo dei trigger.",
-        "es": "Conserve los desfases horarios entre el calendario y los eventos al calcular",
-        "pl": "Podczas obliczania czasów wyzwalania zachowaj przesunięcia strefy czasowej zdarzeń kalendarza.",
-        "uk": "Зберігайте зміщення часового поясу календаря під час обчислення часу запуску.",
-        "zh-cn": "计算触发时间时保留日历事件时区偏移量。"
       }
     },
     "titleLang": {

@@ -180,7 +180,7 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
-### **WORK IN PROGRESS**
+### 0.1.10 (2026-09-05)
 
 - (BenAhrdt) Add configurable waste reminders with combined collection messages, persistent acknowledgement, and automatic expiry.
 - (BenAhrdt) Sort birthday summaries by the next anniversary without negative day counts and add combined messages and nearest-day person arrays.
@@ -208,11 +208,6 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
 
 - (BenAhrdt) Recalculate child custody projections every minute from cached `STAY` events so `responsibleName`, `nextChangeAt`, `next`, and `nextAfter` advance without an API synchronization.
 - (BenAhrdt) Accept nullable birthday fields, match child names embedded in birthday titles, and keep the child age current from the derived birth date.
-
-### 0.1.5 (2026-09-04)
-
-- (BenAhrdt) Fix child location projections by querying the current point in time and suppressing expired `nextChangeAt` values.
-- (BenAhrdt) Populate child `birthDate` and `age` states more reliably by matching birthday events through child IDs or names and deriving the age from the birth date when necessary.
 
 Older changes are available in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 
