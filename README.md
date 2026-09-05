@@ -174,8 +174,7 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
-
-### **WORK IN PROGRESS**
+### 0.1.8 (2026-09-05)
 
 - (BenAhrdt) Adapt event descriptions to FamilienPlan 0.1.95, preserve API titles and complete event JSON, and clear removed notes.
 - (BenAhrdt) Correct appointment counts and refresh removed or reappearing event groups.
@@ -199,10 +198,6 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
 ### 0.1.4 (2026-09-04)
 
 - (BenAhrdt) Expand the English documentation with step-by-step instructions for connecting ioBroker to the FamilienPlan API.
-
-### 0.1.3 (2026-09-04)
-
-- (BenAhrdt) Preserve calendar-event time-zone offsets when calculating trigger times.
 
 Older changes are available in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 

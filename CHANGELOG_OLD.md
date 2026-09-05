@@ -2,6 +2,10 @@
 
 There are no older releases yet. Current release notes are maintained in the
 [README changelog](README.md#changelog).
+## 0.1.3 (2026-09-04)
+
+- (BenAhrdt) Preserve calendar-event time-zone offsets when calculating trigger times.
+
 ## 0.1.2 (2026-09-04)
 
 - (BenAhrdt) Add per-rule active/reset trigger events and a shared JSON event stream for all trigger transitions.
