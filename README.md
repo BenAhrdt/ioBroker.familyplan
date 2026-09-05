@@ -178,8 +178,7 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
-
-### **WORK IN PROGRESS**
+### 0.1.9 (2026-09-05)
 
 - (BenAhrdt) Redesign configuration pages with grouped sections and expandable trigger rules.
 - (BenAhrdt) Add exact/contains title and description filters, selectable trigger-length units, and a separate catch-up window.
@@ -205,10 +204,6 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
 
 - (BenAhrdt) Fix child location projections by querying the current point in time and suppressing expired `nextChangeAt` values.
 - (BenAhrdt) Populate child `birthDate` and `age` states more reliably by matching birthday events through child IDs or names and deriving the age from the birth date when necessary.
-
-### 0.1.4 (2026-09-04)
-
-- (BenAhrdt) Expand the English documentation with step-by-step instructions for connecting ioBroker to the FamilienPlan API.
 
 Older changes are available in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 

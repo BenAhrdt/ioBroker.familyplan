@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "familyplan",
-    "version": "0.1.8",
+    "version": "0.1.9",
     "news": {
+      "0.1.9": {
+        "en": "Redesign configuration pages with grouped sections and expandable trigger rules.\nAdd exact/contains title and description filters, selectable trigger-length units, and a separate catch-up window.\nSupport unlimited trigger lengths with persistent active state and a manual reset button per rule.",
+        "de": "Redesign der Konfigurationsseiten mit Gruppen und erweiterbaren Regeln.\nFügt Filter für exakte Titel und Beschreibung, wählbare Triggerlängen und ein separates Nachholfenster hinzu.\nUnterstützt unbegrenzt lange, permanent aktiv und per Reset-Taste pro Regel.",
+        "ru": "Измените дизайн страниц конфигурации, включив сгруппированные разделы и расширяемые правила триггеров.\nДобавьте точные или содержащие фильтры заголовков и описаний, выбираемые единицы измерения длины триггера и отдельное окно догоняющего ввода.\nПоддержка неограниченной длительности триггеров с постоянным активным состоянием и кнопкой ручного сброса для каждого правила.",
+        "pt": "Redesenhe páginas de configuração com seções e regras expansíveis.\nAdicione filtros de título e descrição exatos, unidades de gatilho selecionáveis e uma janela separada.\nSuporta gatilhos ilimitados com estado ativo persistente e botão de reset manual por regra.",
+        "nl": "Herontwerp de configuratiepagina's met gegroepeerde secties en uitbreidbare activeringsregels.\nVoeg exacte filters toe of bevat titel- en beschrijvingsfilters, selecteerbare eenheden met een triggerlengte en een apart inhaalvenster.\nOndersteun onbeperkte triggerlengtes met een permanente actieve status en een handmatige resetknop per regel.",
+        "fr": "Refonte des pages de configuration avec des sections et des règles de déclenchement extensibles.\nAjoutez des filtres de titre et de description exacts, des unités de déclenchement sélectionnables et une fenêtre de rattrapage séparée.\nSupporte des déclenchements illimités, un état actif persistant et un bouton de réinitialisation manuelle.",
+        "it": "Ridisegna le pagine con sezioni raggruppate e regole di attivazione espandibili.\nAggiungi filtri per titolo e descrizione esatti, unità di lunghezza selezionabili e una finestra di recupero separata.\nSupporta trigger illimitati con stato attivo permanente e reset manuale per regola.",
+        "es": "Rediseñe las páginas de configuración con secciones agrupadas y reglas de activación ampliables.\nAñada filtros de título y descripción exactos o contiene, unidades de longitud de activación seleccionables y una ventana de actualización\nSoporta activaciones ilimitadas con estado activo persistente y un botón de reinicio manual por regla.",
+        "pl": "Przeprojektuj strony konfiguracyjne z pogrupowanymi sekcjami i rozszerzalnymi regułami wyzwalania.\nDodaj dokładne/zawiera filtry tytułu i opisu, wybierane jednostki długości wyzwalacza i osobne okno nadrabiania.\nObsługa nieograniczonych długości wyzwalaczy z trwałym stanem aktywnym i przyciskiem ręcznego resetowania na regułę.",
+        "uk": "Переробляйте сторінки конфігурації за допомогою згрупованих розділів та розширюваних правил запуску.\nДодайте точні/містить фільтри заголовка та опису, вибрані одиниці довжини тригера та окреме вікно наздоганяння.\nПідтримка необмеженої довжини тригерів із постійним активним станом та кнопкою ручного скидання для кожного правила.",
+        "zh-cn": "使用分组部分和可扩展触发规则重新设计配置页面。\n添加精确/包含标题和描述过滤器、可选的触发长度单位以及单独的追赶窗口。\n支持无限的触发长度，具有持续的活动状态，每条规则都有一个手动重置按钮。"
+      },
       "0.1.8": {
         "en": "Adapt event descriptions to FamilienPlan 0.1.95, preserve API titles and complete event JSON, and clear removed notes.\nCorrect appointment counts and refresh removed or reappearing event groups.\nDetermine custody changes by responsible user IDs and consider the end of the current stay.\nRespect child-read permissions and report unavailable child ages as unknown without inferring birthday associations from names.",
         "de": "Eventbeschreibungen an FamilienPlan 0.1.95 anpassen, API-Titel beibehalten, JSON-Daten löschen.\nTermine korrigieren und gelöschte oder neue Eventgruppen auffrischen.\nBestimme das Sorgerecht anhand der Nutzernamen und überlege dir das Ende des Aufenthalts.\nLesen Sie Kinder und melden Sie Alter nicht verfügbarer Kinder als unbekannt, ohne aus Namen einen Bezug zum Geburtstag zu ziehen.",
@@ -80,19 +93,6 @@
         "pl": "Podczas obliczania czasów wyzwalania zachowaj przesunięcia strefy czasowej zdarzeń kalendarza.",
         "uk": "Зберігайте зміщення часового поясу календаря під час обчислення часу запуску.",
         "zh-cn": "计算触发时间时保留日历事件时区偏移量。"
-      },
-      "0.1.2": {
-        "en": "Add per-rule active/reset trigger events and a shared JSON event stream for all trigger transitions.\nInclude appointment notes and child names in projected event data while omitting internal child IDs.\nBuild automatically for GitHub installations and fix unit-test discovery on Windows.",
-        "de": "Fügen Sie Aktive/Reset-Trigger pro Regel und einen JSON-Eventstream für alle Triggerübergänge hinzu.\nNehmen Sie Terminnotizen und Kindernamen in die Eventdaten auf und lassen Sie interne IDs weg.\nBuild automatisch für GitHub und Fix Unittest Discovery unter Windows.",
-        "ru": "Добавьте триггерные события активации/сброса для каждого правила и общий поток событий JSON для всех переходов по триггерам.\nВключите записи о встречах и имена детей в прогнозируемые данные о событиях, не указывая внутренние идентификаторы детей.\nАвтоматическая сборка для установок GitHub и исправление обнаружения модульных тестов в Windows.",
-        "pt": "Adicione eventos ativos/redefinidos por regra e um fluxo de eventos JSON para todas as transições.\nInclua notas e nomes de crianças nos dados projetados do evento, omitindo IDs internas.\nCrie automaticamente para o GitHub e corrija o teste de unidade no Windows.",
-        "nl": "Voeg active/reset triggergebeurtenissen per regel toe en een gedeelde JSON-eventstream voor alle triggerovergangen.\nNotities van afspraken en namen van kinderen opnemen in de gegevens van de verwachte gebeurtenissen, terwijl interne identificatiegegevens voor kinderen worden weggelaten.\nOntwikkel automatisch voor GitHub-installaties en corrigeer de detectie van unit-tests op Windows.",
-        "fr": "Ajoutez des déclencheurs actifs/réinitialisés par règle et un flux d'événements JSON partagé pour toutes les transitions.\nIncluez les notes de rendez-vous et les noms des enfants dans les prévisions, en omettant les ID internes.\nCréez automatiquement pour GitHub et corrigez Unit-Test Discovery sur Windows.",
-        "it": "Aggiunga eventi trigger active/reset per regola e un flusso JSON condiviso per tutte le transizioni.\nIncluda note sugli appuntamenti e nomi dei figli nei dati previsti omettendo gli ID interni.\nCrea automaticamente per GitHub e corregge gli unit-test discovery su Windows.",
-        "es": "Añada eventos de activación o restablecimiento por regla y un flujo de eventos JSON compartido para todas las transiciones.\nIncluya las notas de citas y los nombres de los niños en los datos de los eventos proyectados y omita los ID internos\nCree automáticamente para instalaciones de GitHub y arregle pruebas unitarias en Windows.",
-        "pl": "Dodaj aktywne/resetuj zdarzenia wyzwalające według reguły oraz współdzielony strumień zdarzeń JSON dla wszystkich przejść wyzwalających.\nUwzględniaj notatki o spotkaniach i nazwiska potomne w prognozowanych danych zdarzeń, pomijając wewnętrzne identyfikatory podrzędne.\nKompiluj automatycznie dla instalacji GitHub i naprawiaj wykrywanie testów jednostek w systemie Windows.",
-        "uk": "Додайте активні/скинуті події тригера для кожного правила та спільний потік подій JSON для всіх тригерних переходів.\nВключайте примітки про зустріч та імена дочірніх дітей до даних прогнозованих подій, опускаючи внутрішні дочірні ідентифікатори.\nСтворюйте автоматично для інсталяцій GitHub та виправте виявлення тестування одиниць у Windows.",
-        "zh-cn": "为所有触发器转换添加每条规则的激活/重置触发事件和共享的 JSON 事件流。\n在预计的事件数据中包括约会记录和孩子姓名，同时省略内部儿童 ID。\n为 GitHub 安装自动构建，并修复 Windows 上的单元测试发现。"
       }
     },
     "titleLang": {

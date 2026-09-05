@@ -2,6 +2,10 @@
 
 There are no older releases yet. Current release notes are maintained in the
 [README changelog](README.md#changelog).
+## 0.1.4 (2026-09-04)
+
+- (BenAhrdt) Expand the English documentation with step-by-step instructions for connecting ioBroker to the FamilienPlan API.
+
 ## 0.1.3 (2026-09-04)
 
 - (BenAhrdt) Preserve calendar-event time-zone offsets when calculating trigger times.
