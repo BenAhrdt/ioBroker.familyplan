@@ -66,6 +66,7 @@ export interface BaseCalendarEvent {
    */
   ends_at: string;
   child_id?: number | null;
+  user_id?: number | null;
   [key: string]: unknown;
 }
 export interface CalendarEvent extends BaseCalendarEvent {
@@ -157,7 +158,7 @@ export interface BirthdayAggregation {
   name: string;
   birthDate: string;
   date: string;
-  age: number;
+  age: number | null;
   daysUntil: number;
 }
 /**
@@ -226,6 +227,9 @@ export interface AdapterConfigShape {
    */
   birthdayEmptyText: string;
   wasteEnabled: boolean;
+  wasteReminderEnabled?: boolean;
+  wasteReminderDays?: number;
+  wasteReminderTime?: string;
   wasteTodayTemplate: string;
   /**
    *

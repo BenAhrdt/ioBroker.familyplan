@@ -26,6 +26,12 @@ import {
   triggerIsActive,
 } from "./lib/triggers";
 import { parseEvents } from "./lib/validation";
+import { wasteReminder } from "./lib/waste-reminder";
+import {
+  birthdayBirthDate,
+  birthdaySummaryText,
+  upcomingBirthdays,
+} from "./lib/birthdays";
 import type {
   AdapterConfigShape,
   CalendarEvent,
@@ -52,6 +58,7 @@ export class FamilienPlan extends utils.Adapter {
     string | number | boolean | null
   >();
   private triggerHistory?: Record<string, string>;
+  private wasteReminderQueue: Promise<void> = Promise.resolve();
   private lastTriggerCheck?: DateTime;
   private lastTriggerCheckPersistedAt?: DateTime;
   private readonly triggerResets = new Set<string>();
@@ -84,6 +91,7 @@ export class FamilienPlan extends utils.Adapter {
     );
     this.subscribeStates("control.refresh");
     this.subscribeStates("triggers.*.reset");
+    this.subscribeStates("waste.reminder.reset");
     if (!this.cfg.baseUrl?.trim() || !this.cfg.apiKey?.trim()) {
       await this.cleanupNeverConfiguredObjects();
       await this.setStateAsync("info.lastError", "", true);
@@ -116,6 +124,14 @@ export class FamilienPlan extends utils.Adapter {
     id: string,
     state: ioBroker.State | null | undefined,
   ): Promise<void> {
+    if (
+      id === `${this.namespace}.waste.reminder.reset` &&
+      state?.val === true &&
+      !state.ack
+    ) {
+      await this.updateWasteReminder(this.events, DateTime.now(), true);
+      return;
+    }
     const resetPrefix = `${this.namespace}.triggers.`;
     if (
       id.startsWith(resetPrefix) &&
@@ -694,40 +710,7 @@ export class FamilienPlan extends utils.Adapter {
         `${root}.location.responsibleUserId`,
         `${root}.location.source`,
       ]);
-      const birthday = this.findChildBirthday(child);
-      const rawChild = child as Child & Record<string, unknown>;
-      const apiBirthDate = this.childBirthDate(rawChild);
-      const birthdayData =
-        birthday && (birthday.birth_date || typeof birthday.age === "number")
-          ? birthdayItem(birthday, now, this.cfg.timezone, "yyyy-MM-dd")
-          : undefined;
-      const birthDate = apiBirthDate
-        ? DateTime.fromISO(apiBirthDate).toFormat("yyyy-MM-dd")
-        : (birthdayData?.birthDate ?? "");
-      const parsedBirthDate = DateTime.fromISO(birthDate);
-      const age = parsedBirthDate.isValid
-        ? Math.max(
-            0,
-            Math.floor(
-              now
-                .setZone(this.cfg.timezone)
-                .startOf("day")
-                .diff(parsedBirthDate, "years").years,
-            ),
-          )
-        : (child.age ?? null);
-      const childJson = {
-        ...child,
-        name: child.name,
-        birthDate,
-        age,
-      };
-      await this.writeFields(root, {
-        name: child.name,
-        birthDate,
-        age,
-        json: JSON.stringify(childJson),
-      });
+      await this.writeChildDetails(child, root, now);
       if (this.cfg.fetchLocations) {
         try {
           const loc = await this.withRetry(() =>
@@ -819,33 +802,7 @@ export class FamilienPlan extends utils.Adapter {
   ): Promise<void> {
     for (const child of children) {
       const root = this.childRoot(child, children);
-      const birthday = this.findChildBirthday(child);
-      const apiBirthDate = this.childBirthDate(child);
-      const birthdayData =
-        birthday && (birthday.birth_date || typeof birthday.age === "number")
-          ? birthdayItem(birthday, now, this.cfg.timezone, "yyyy-MM-dd")
-          : undefined;
-      const birthDate = apiBirthDate
-        ? DateTime.fromISO(apiBirthDate).toFormat("yyyy-MM-dd")
-        : (birthdayData?.birthDate ?? "");
-      const parsedBirthDate = DateTime.fromISO(birthDate);
-      const age = parsedBirthDate.isValid
-        ? Math.max(
-            0,
-            Math.floor(
-              now
-                .setZone(this.cfg.timezone)
-                .startOf("day")
-                .diff(parsedBirthDate, "years").years,
-            ),
-          )
-        : (child.age ?? null);
-      await this.writeFields(root, {
-        name: child.name,
-        birthDate,
-        age,
-        json: JSON.stringify({ ...child, name: child.name, birthDate, age }),
-      });
+      await this.writeChildDetails(child, root, now);
 
       if (!this.cfg.fetchLocations) {
         continue;
@@ -1123,10 +1080,9 @@ export class FamilienPlan extends utils.Adapter {
       await this.prunePreviewFolders("birthdays", new Set());
       return;
     }
-    const all = events.filter((event) => event.event_type === "BIRTHDAY");
-    if (!all.length && !(await this.getObjectAsync("birthdays"))) {
-      return;
-    }
+    const all = uniqueOccurrences(
+      events.filter((event) => event.event_type === "BIRTHDAY"),
+    );
     const [next, nextAfter] = nextOccurrences(all, now);
     await this.writeBirthdayOccurrence(
       "birthdays.next",
@@ -1154,26 +1110,30 @@ export class FamilienPlan extends utils.Adapter {
       "birthdays.summary",
       "Zusammenfassung der Geburtstage",
     );
+    const upcoming = upcomingBirthdays(
+      [...all, ...this.childBirthdayEvents],
+      now,
+      this.cfg.timezone,
+      this.cfg.birthdayDateFormat,
+      this.childrenData,
+    );
+    const summary = upcoming.map(({ event, ...item }) => ({
+      ...this.displayEvent(event),
+      ...item,
+    }));
     await this.writeFields("birthdays.summary", {
-      count: all.length,
-      json: JSON.stringify(
-        all.map((event) => ({
-          ...birthdayItem(
-            event,
-            now,
-            this.cfg.timezone,
-            this.cfg.birthdayDateFormat,
-          ),
-          ...this.displayEvent(event),
-        })),
+      count: summary.length,
+      json: JSON.stringify(summary),
+      daysUntil: upcoming[0]?.daysUntil ?? null,
+      text: birthdaySummaryText(upcoming) || this.cfg.birthdayEmptyText || "",
+      nextJson: JSON.stringify(
+        summary.filter((item) => item.daysUntil === upcoming[0]?.daysUntil),
       ),
       jsonSignificant: JSON.stringify(
-        all
-          .filter((event) => {
-            const age = Number(event.age ?? 0);
-            return age === 18 || (age >= 20 && age % 10 === 0);
-          })
-          .map((event) => this.displayEvent(event)),
+        summary.filter(
+          ({ age }) =>
+            age != null && (age === 18 || (age >= 20 && age % 10 === 0)),
+        ),
       ),
     });
     for (let month = 1; month <= 12; month++) {
@@ -1193,6 +1153,8 @@ export class FamilienPlan extends utils.Adapter {
               now,
               this.cfg.timezone,
               this.cfg.birthdayDateFormat,
+              this.childrenData.find((child) => child.id === event.child_id)
+                ?.birth_date,
             ),
             ...this.displayEvent(event),
           })),
@@ -1209,23 +1171,32 @@ export class FamilienPlan extends utils.Adapter {
   ): Promise<void> {
     await this.writeOccurrence(root, name, event, now, false);
     const item = event
-      ? birthdayItem(event, now, this.cfg.timezone, this.cfg.birthdayDateFormat)
+      ? birthdayItem(
+          event,
+          now,
+          this.cfg.timezone,
+          this.cfg.birthdayDateFormat,
+          this.childrenData.find((child) => child.id === event.child_id)
+            ?.birth_date,
+        )
       : undefined;
     await this.writeFields(root, {
       name: item?.name ?? "",
-      age: item?.age ?? 0,
+      age: item?.age ?? null,
       birthDate: item?.birthDate ?? "",
       text: item
-        ? renderRelative(
-            [item as unknown as Record<string, unknown>],
-            item.daysUntil,
-            {
-              today: this.cfg.birthdayTodayTemplate,
-              tomorrow: this.cfg.birthdayTomorrowTemplate,
-              future: this.cfg.birthdayFutureTemplate,
-            },
-            this.cfg.birthdaySeparator,
-          )
+        ? item.age == null
+          ? birthdaySummaryText([{ ...item, event: event! }])
+          : renderRelative(
+              [item as unknown as Record<string, unknown>],
+              item.daysUntil,
+              {
+                today: this.cfg.birthdayTodayTemplate,
+                tomorrow: this.cfg.birthdayTomorrowTemplate,
+                future: this.cfg.birthdayFutureTemplate,
+              },
+              this.cfg.birthdaySeparator,
+            )
         : this.cfg.birthdayEmptyText,
     });
   }
@@ -1233,6 +1204,7 @@ export class FamilienPlan extends utils.Adapter {
     events: CalendarEvent[],
     now: DateTime,
   ): Promise<void> {
+    await this.updateWasteReminder(events, now);
     if (!this.cfg.wasteEnabled) {
       await this.prunePreviewFolders("waste", new Set());
       return;
@@ -1315,6 +1287,111 @@ export class FamilienPlan extends utils.Adapter {
         await this.delObjectAsync(id, { recursive: true });
       }
     }
+  }
+
+  private async updateWasteReminder(
+    events: CalendarEvent[],
+    now: DateTime,
+    reset = false,
+  ): Promise<void> {
+    const update = this.wasteReminderQueue.then(() =>
+      this.writeWasteReminder(events, now, reset),
+    );
+    this.wasteReminderQueue = update.catch(() => undefined);
+    await update;
+  }
+
+  private async writeWasteReminder(
+    events: CalendarEvent[],
+    now: DateTime,
+    reset: boolean,
+  ): Promise<void> {
+    const root = "waste.reminder";
+    if (!this.cfg.wasteEnabled || this.cfg.wasteReminderEnabled === false) {
+      await this.deleteEventGroup(root);
+      return;
+    }
+    await this.ensureFolder(root, "Abfall-Erinnerung");
+    await this.ensureState(
+      `${root}.reset`,
+      "Erinnerung quittieren",
+      "boolean",
+      "button",
+      true,
+      false,
+    );
+    await this.ensureState(
+      `${root}._acknowledgedDates`,
+      "Quittierte Abholtage",
+      "string",
+      "json",
+      false,
+      "[]",
+    );
+    let acknowledgedDates: string[] = [];
+    try {
+      const stored: unknown = JSON.parse(
+        String(
+          (await this.getStateAsync(`${root}._acknowledgedDates`))?.val || "[]",
+        ),
+      );
+      if (Array.isArray(stored)) {
+        const today = now
+          .setZone(this.cfg.timezone || "Europe/Berlin")
+          .toISODate()!;
+        acknowledgedDates = stored.filter(
+          (date): date is string =>
+            typeof date === "string" &&
+            /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+            date >= today,
+        );
+      }
+    } catch {
+      this.log.warn(
+        "Gespeicherte Abfall-Quittierungen konnten nicht gelesen werden.",
+      );
+    }
+    const reminder = wasteReminder(events, now, this.cfg, acknowledgedDates);
+    // Only acknowledge the displayed active reminder, never a future preview.
+    if (
+      reset &&
+      reminder?.active &&
+      (await this.getStateAsync(`${root}.active`))?.val === true &&
+      (await this.getStateAsync(`${root}.collectionDate`))?.val === reminder.key
+    ) {
+      acknowledgedDates.push(reminder.key);
+      reminder.active = false;
+      reminder.acknowledged = true;
+    }
+    await this.setStateAsync(
+      `${root}._acknowledgedDates`,
+      JSON.stringify(acknowledgedDates),
+      true,
+    );
+    await this.setStateAsync(`${root}.reset`, false, true);
+    await this.writeFields(root, {
+      collectionDate: reminder?.key ?? "",
+      date: reminder?.date.toFormat(this.cfg.dateFormat || "dd.MM.yyyy") ?? "",
+      daysLeft: reminder?.daysLeft ?? 0,
+      remindAt: reminder?.remindAt.toISO() ?? "",
+      expiresAt: reminder?.expiresAt.toISO() ?? "",
+      types: reminder?.types.join(", ") ?? "",
+      count: reminder?.entries.length ?? 0,
+      text: reminder?.text ?? this.cfg.wasteEmptyText ?? "",
+      json: JSON.stringify(
+        reminder?.entries.map((event) => ({
+          ...wasteItem(
+            event,
+            now,
+            this.cfg.timezone,
+            this.cfg.wasteMappings || [],
+          ),
+          ...this.displayEvent(event),
+        })) ?? [],
+      ),
+      acknowledged: reminder?.acknowledged ?? false,
+      active: reminder?.active ?? false,
+    });
   }
 
   private async resetMissingEventObjects(
@@ -1682,8 +1759,70 @@ export class FamilienPlan extends utils.Adapter {
         typeof value === "string" && DateTime.fromISO(value).isValid,
     );
   }
+  private async writeChildDetails(
+    child: Child,
+    root: string,
+    now: DateTime,
+  ): Promise<void> {
+    const zone = this.cfg.timezone || "Europe/Berlin";
+    const sourceDate = this.childBirthDate(child);
+    const birthday = this.findChildBirthday(child);
+    const date = sourceDate
+      ? DateTime.fromISO(sourceDate, { zone }).startOf("day")
+      : birthday
+        ? birthdayBirthDate(birthday, zone)
+        : undefined;
+    const birthDate = date?.isValid
+      ? date.toFormat(this.cfg.birthdayDateFormat || "dd.MM.yyyy")
+      : "";
+    const age = date?.isValid
+      ? Math.max(
+          0,
+          Math.floor(
+            now.setZone(zone).startOf("day").diff(date, "years").years,
+          ),
+        )
+      : (child.age ?? null);
+    const raw = child as Child & Record<string, unknown>;
+    let username =
+      typeof raw.default_responsible_username === "string"
+        ? raw.default_responsible_username.trim()
+        : "";
+    const responsibleId = child.default_responsible_user_id;
+    if (!username && responsibleId != null) {
+      username = this.responsibleNames.get(responsibleId) ?? "";
+      if (!username) {
+        const stay = this.events.find(
+          (event) =>
+            event.event_type === "STAY" &&
+            event.responsible_user_id === responsibleId &&
+            this.responsibleName(event),
+        );
+        if (stay) {
+          username = this.responsibleName(stay);
+        }
+      }
+    }
+    const childJson: Record<string, unknown> = {
+      ...child,
+      name: child.name,
+      birthDate,
+      age,
+      default_responsible_username: username,
+    };
+    delete childJson.default_responsible_user_id;
+    await this.writeFields(root, {
+      name: child.name,
+      birthDate,
+      age,
+      json: JSON.stringify(childJson),
+    });
+  }
   private findChildBirthday(child: Child): CalendarEvent | undefined {
-    return findBirthdayForChild(this.childBirthdayEvents, child);
+    return findBirthdayForChild(
+      [...this.childBirthdayEvents, ...this.events],
+      child,
+    );
   }
   private childName(childId: number | null | undefined): string {
     if (childId == null) {
@@ -1812,7 +1951,7 @@ export class FamilienPlan extends utils.Adapter {
       }
       const type =
         localizedValue === null
-          ? key === "age"
+          ? key === "age" || key === "daysUntil"
             ? "number"
             : "string"
           : (typeof localizedValue as StateType);
@@ -1916,6 +2055,11 @@ export class FamilienPlan extends utils.Adapter {
       daysUntil: "Verbleibende Tage",
       allDay: "Ganztägig",
       active: "Aktiv",
+      acknowledged: "Quittiert",
+      collectionDate: "Abholtag (ISO)",
+      remindAt: "Erinnerungszeitpunkt",
+      expiresAt: "Ablauf der Erinnerung",
+      types: "Abfallarten",
       event: "Triggerereignis als JSON",
       enabled: "Regel aktiviert",
       count: "Anzahl",

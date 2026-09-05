@@ -2,7 +2,12 @@ import { expect } from "chai";
 import { DateTime } from "luxon";
 import type {} from "./adapter-config";
 import type * as AdapterModule from "../main";
-import type { CalendarEvent, Child, TriggerRule } from "./types";
+import type {
+  AdapterConfigShape,
+  CalendarEvent,
+  Child,
+  TriggerRule,
+} from "./types";
 import { nextLocationChange, uniqueOccurrences } from "./aggregation";
 import { parseEvents, parseChildren } from "./validation";
 
@@ -20,7 +25,12 @@ if (originalCore) {
 
 type Value = string | number | boolean | null;
 interface ProjectionAdapter {
-  config: { triggerRules: TriggerRule[] };
+  config: Partial<AdapterConfigShape> & { triggerRules: TriggerRule[] };
+  updateWasteReminder(
+    events: CalendarEvent[],
+    now: DateTime,
+    reset?: boolean,
+  ): Promise<void>;
   triggerResets: Set<string>;
   processTriggers(events: CalendarEvent[], now: DateTime): Promise<void>;
   onStateChange(id: string, state: Partial<ioBroker.State>): Promise<void>;
@@ -29,6 +39,7 @@ interface ProjectionAdapter {
   childBirthdayEvents: CalendarEvent[];
   writeEvents(events: CalendarEvent[], now: DateTime): Promise<void>;
   writeChildrenFromEvents(children: Child[], now: DateTime): Promise<void>;
+  writeBirthdays(events: CalendarEvent[], now: DateTime): Promise<void>;
 }
 const now = DateTime.fromISO("2026-09-05T00:00:00+02:00");
 const stay: CalendarEvent = {
@@ -52,6 +63,12 @@ function harness(states = new Map<string, Value>()): {
     config: {
       timezone: "Europe/Berlin",
       dateFormat: "dd.MM.yyyy",
+      birthdayDateFormat: "dd.MM.yyyy",
+      birthdayTodayTemplate: "Heute wird {name} {age}.",
+      birthdayTomorrowTemplate: "Morgen wird {name} {age}.",
+      birthdayFutureTemplate: "In {days} Tagen wird {name} {age}.",
+      birthdaySeparator: " ",
+      birthdayEmptyText: "",
       fetchLocations: false,
       triggerRules: [],
       triggerHistoryDays: 90,
@@ -63,6 +80,7 @@ function harness(states = new Map<string, Value>()): {
     events: [],
     namespace: "familyplan.0",
     triggerResets: new Set(),
+    wasteReminderQueue: Promise.resolve(),
     triggerCounts: new Map(),
     triggerLastTriggered: new Map(),
     log: {
@@ -216,7 +234,7 @@ describe("FamilienPlan 0.1.95 API contract", () => {
     expect(states.get("children.emma.birthDate")).eq("");
     expect(JSON.parse(String(states.get("children.emma.json")))).include({
       id: 1,
-      default_responsible_user_id: null,
+      default_responsible_username: "",
       age: null,
     });
   });
@@ -344,5 +362,298 @@ describe("Trigger lifecycle", () => {
     adapter.config.triggerRules = [{ ...rule, enabled: false }];
     await adapter.processTriggers([stay], firedAt.plus({ seconds: 1 }));
     expect(states.get("triggers.ankunft.active")).eq(false);
+  });
+});
+
+describe("Persistent waste reminder projection", () => {
+  const events: CalendarEvent[] = [
+    {
+      event_type: "WASTE",
+      id: 1,
+      title: "Altpapier",
+      starts_at: "2026-09-06T00:00:00+02:00",
+      ends_at: "2026-09-07T00:00:00+02:00",
+    },
+  ];
+  const due = DateTime.fromISO("2026-09-05T15:00:00+02:00");
+  it("persists a reset across restart and expires without another collection", async () => {
+    const { adapter, states } = harness();
+    adapter.config.wasteEnabled = true;
+    await adapter.updateWasteReminder(events, due);
+    expect(states.get("waste.reminder.active")).eq(true);
+    await adapter.updateWasteReminder(events, due, true);
+    expect(states.get("waste.reminder.active")).eq(false);
+    expect(states.get("waste.reminder.reset")).eq(false);
+    expect(states.get("waste.reminder.acknowledged")).eq(true);
+    expect(states.get("waste.reminder.text")).eq(
+      "Morgen wird Altpapier abgeholt.",
+    );
+    const restarted = harness(states).adapter;
+    restarted.config.wasteEnabled = true;
+    await restarted.updateWasteReminder(events, due.plus({ minutes: 1 }));
+    expect(states.get("waste.reminder.active")).eq(false);
+    expect(states.get("waste.reminder.acknowledged")).eq(true);
+    await restarted.updateWasteReminder(events, due.plus({ days: 2 }));
+    expect(states.get("waste.reminder.active")).eq(false);
+    expect(states.get("waste.reminder.json")).eq("[]");
+  });
+  it("ignores premature resets and clears an unacknowledged expired reminder", async () => {
+    const { adapter, states } = harness();
+    adapter.config.wasteEnabled = true;
+    await adapter.updateWasteReminder(events, due.minus({ minutes: 1 }), true);
+    await adapter.updateWasteReminder(events, due);
+    expect(states.get("waste.reminder.active")).eq(true);
+    await adapter.updateWasteReminder(
+      events,
+      DateTime.fromISO("2026-09-07T00:00:00+02:00"),
+    );
+    expect(states.get("waste.reminder.active")).eq(false);
+    expect(states.get("waste.reminder.text")).eq("");
+  });
+  it("serializes reset and refresh and recreates states after disabling", async () => {
+    const { adapter, states } = harness();
+    adapter.config.wasteEnabled = true;
+    await adapter.updateWasteReminder(events, due);
+    await Promise.all([
+      adapter.updateWasteReminder(events, due, true),
+      adapter.updateWasteReminder(events, due),
+    ]);
+    expect(states.get("waste.reminder.active")).eq(false);
+    adapter.config.wasteReminderEnabled = false;
+    await adapter.updateWasteReminder(events, due);
+    expect(states.has("waste.reminder.active")).eq(false);
+    adapter.config.wasteReminderEnabled = true;
+    await adapter.updateWasteReminder(events, due);
+    expect(states.get("waste.reminder.active")).eq(true);
+  });
+});
+
+describe("Child and birthday display details", () => {
+  it("formats an explicit birth date and refreshes current age on the birthday", async () => {
+    const { adapter, states } = harness();
+    const child = {
+      id: 1,
+      name: "Rika",
+      default_responsible_user_id: 2,
+      birth_date: "2014-09-06",
+    };
+    adapter.events = [
+      { ...stay, responsible_user_id: 2, responsible_name: "Ben" },
+    ];
+    await adapter.writeChildrenFromEvents([child], now);
+    expect(states.get("children.rika.birthDate")).eq("06.09.2014");
+    expect(states.get("children.rika.age")).eq(11);
+    const json = JSON.parse(String(states.get("children.rika.json")));
+    expect(json.default_responsible_username).eq("Ben");
+    expect(json).not.have.property("default_responsible_user_id");
+    await adapter.writeChildrenFromEvents([child], now.plus({ days: 1 }));
+    expect(states.get("children.rika.age")).eq(12);
+  });
+  it("derives child birth dates from explicitly linked cached birthdays", async () => {
+    const { adapter, states } = harness();
+    adapter.events = [
+      { ...stay, event_type: "BIRTHDAY", age: 12, child_id: 1 },
+    ];
+    await adapter.writeChildrenFromEvents(adapter.childrenData, now);
+    expect(states.get("children.emma.birthDate")).eq("05.09.2014");
+    expect(states.get("children.emma.age")).eq(12);
+  });
+  it("publishes sorted annual summaries and clears the nearest-day fields", async () => {
+    const { adapter, states } = harness();
+    adapter.config.birthdaysEnabled = true;
+    const events = [
+      {
+        ...stay,
+        child_id: undefined,
+        event_type: "BIRTHDAY",
+        id: 1,
+        title: "Rebecca",
+        age: 39,
+      },
+      {
+        ...stay,
+        child_id: undefined,
+        event_type: "BIRTHDAY",
+        id: 2,
+        title: "XY",
+        age: 40,
+      },
+      {
+        ...stay,
+        child_id: undefined,
+        event_type: "BIRTHDAY",
+        id: 3,
+        title: "Gestern",
+        age: 30,
+        starts_at: "2026-09-04T00:00:00+02:00",
+        ends_at: "2026-09-05T00:00:00+02:00",
+      },
+    ];
+    await adapter.writeBirthdays(events, now);
+    const json = JSON.parse(String(states.get("birthdays.summary.json")));
+    expect(json.map((item: { daysUntil: number }) => item.daysUntil)).deep.eq([
+      0, 0, 364,
+    ]);
+    expect(json[2].age).eq(31);
+    expect(states.get("birthdays.summary.text")).eq(
+      "Heute werden Rebecca 39 und XY 40.",
+    );
+    expect(JSON.parse(String(states.get("birthdays.summary.nextJson")))).length(
+      2,
+    );
+    expect(states.get("birthdays.summary.daysUntil")).eq(0);
+    await adapter.writeBirthdays([], now);
+    expect(states.get("birthdays.summary.nextJson")).eq("[]");
+    expect(states.get("birthdays.summary.daysUntil")).eq(null);
+    expect(states.get("birthdays.summary.text")).eq("");
+  });
+});
+
+describe("FamilienPlan 0.1.99 birthday sources", () => {
+  const manual: CalendarEvent = {
+    event_type: "BIRTHDAY",
+    id: 1,
+    source: "birthday",
+    title: "Rebecca",
+    starts_at: "2026-09-06T00:00:00+02:00",
+    ends_at: "2026-09-07T00:00:00+02:00",
+    all_day: true,
+    age: 39,
+  };
+  const child: CalendarEvent = {
+    ...manual,
+    id: "child:1",
+    source: "child",
+    child_id: 1,
+    title: "Rika",
+    age: 12,
+    starts_at: "2026-09-07T00:00:00+02:00",
+    ends_at: "2026-09-08T00:00:00+02:00",
+  };
+  const person: CalendarEvent = {
+    ...manual,
+    id: "person:1",
+    source: "person",
+    user_id: 1,
+    title: "Ben",
+    age: 40,
+    starts_at: "2026-09-08T00:00:00+02:00",
+    ends_at: "2026-09-09T00:00:00+02:00",
+  };
+  it("keeps all sources and successive annual occurrences in calendar and month projections", async () => {
+    const { adapter, states } = harness();
+    adapter.config.birthdaysEnabled = true;
+    adapter.childrenData = parseChildren([
+      { id: 1, name: "Rika", birth_date: "2014-09-07" },
+    ]);
+    const nextYear = {
+      ...child,
+      age: 13,
+      starts_at: "2027-09-07T00:00:00+02:00",
+      ends_at: "2027-09-08T00:00:00+02:00",
+    };
+    const events = uniqueOccurrences(
+      parseEvents([manual, child, person, nextYear, child]),
+    );
+    expect(events).length(4);
+    adapter.events = events;
+    await adapter.writeEvents(events, now);
+    await adapter.writeBirthdays(events, now);
+    await adapter.writeChildrenFromEvents(adapter.childrenData, now);
+    expect(states.get("events.appointment.birthday.count")).eq(4);
+    expect(states.get("birthdays.next.allDay")).eq(true);
+    expect(JSON.parse(String(states.get("birthdays.next.json"))).id).eq(1);
+    expect(JSON.parse(String(states.get("birthdays.nextAfter.json"))).id).eq(
+      "child:1",
+    );
+    const monthly = JSON.parse(String(states.get("birthdays.month.09.json")));
+    expect(monthly).length(4);
+    expect(monthly.map((item: CalendarEvent) => item.id)).deep.eq([
+      1,
+      "child:1",
+      "person:1",
+      "child:1",
+    ]);
+    expect(monthly[2]).include({ user_id: 1, source: "person", all_day: true });
+    const summary = JSON.parse(String(states.get("birthdays.summary.json")));
+    expect(summary).length(3);
+    expect(
+      summary.map((item: { daysUntil: number }) => item.daysUntil),
+    ).deep.eq([1, 2, 3]);
+    expect(states.get("children.rika.birthDate")).eq("07.09.2014");
+    expect(states.get("children.rika.age")).eq(11);
+    expect(adapter.events).length(4);
+  });
+  it("uses children birth dates without inventing calendar entries or requiring birthday data", async () => {
+    const { adapter, states } = harness();
+    adapter.config.birthdaysEnabled = true;
+    adapter.childrenData = parseChildren([
+      { id: 1, name: "Rika", birth_date: "2014-09-07" },
+      { id: 2, name: "Null", birth_date: null },
+      { id: 3, name: "Legacy" },
+    ]);
+    await adapter.writeChildrenFromEvents(adapter.childrenData, now);
+    await adapter.writeBirthdays(adapter.events, now);
+    expect(states.get("children.rika.birthDate")).eq("07.09.2014");
+    expect(JSON.parse(String(states.get("children.rika.json"))).birth_date).eq(
+      "2014-09-07",
+    );
+    expect(states.get("children.null.age")).eq(null);
+    expect(states.get("children.legacy.birthDate")).eq("");
+    expect(states.get("birthdays.summary.count")).eq(0);
+    expect(adapter.events).length(0);
+    adapter.childrenData = parseChildren([
+      { id: 1, name: "Rika", birth_date: null },
+    ]);
+    await adapter.writeChildrenFromEvents(adapter.childrenData, now);
+    expect(states.get("children.rika.birthDate")).eq("");
+    expect(states.get("children.rika.age")).eq(null);
+  });
+  it("keeps the real February 29 birth date while respecting the server's February 28 occurrence", async () => {
+    const { adapter, states } = harness();
+    adapter.config.birthdaysEnabled = true;
+    adapter.childrenData = parseChildren([
+      { id: 1, name: "Rika", birth_date: "2012-02-29" },
+    ]);
+    const event = {
+      ...child,
+      age: 14,
+      starts_at: "2026-02-27T23:00:00Z",
+      ends_at: "2026-02-28T23:00:00Z",
+    };
+    const before = DateTime.fromISO("2026-02-27T22:59:59Z");
+    adapter.events = parseEvents([event]);
+    await adapter.writeChildrenFromEvents(adapter.childrenData, before);
+    expect(states.get("children.rika.age")).eq(13);
+    await adapter.writeBirthdays(adapter.events, before);
+    expect(states.get("birthdays.next.birthDate")).eq("29.02.2012");
+    expect(states.get("birthdays.next.date")).eq("28.02.2026");
+    expect(
+      JSON.parse(String(states.get("birthdays.month.02.json")))[0].birthDate,
+    ).eq("29.02.2012");
+    await adapter.writeChildrenFromEvents(
+      adapter.childrenData,
+      before.plus({ seconds: 1 }),
+    );
+    expect(states.get("children.rika.age")).eq(14);
+    expect(adapter.events[0].starts_at).eq(event.starts_at);
+  });
+  it("accepts older birthdays without source or optional data and leaves unknown ages null", async () => {
+    const { adapter, states } = harness();
+    adapter.config.birthdaysEnabled = true;
+    const old = {
+      event_type: "BIRTHDAY",
+      id: 7,
+      title: "Oma",
+      starts_at: manual.starts_at,
+      ends_at: manual.ends_at,
+    };
+    await adapter.writeBirthdays(parseEvents([old]), now);
+    expect(states.get("birthdays.next.age")).eq(null);
+    expect(states.get("birthdays.next.birthDate")).eq("");
+    expect(states.get("birthdays.next.text")).eq("Morgen hat Oma Geburtstag.");
+    const item = JSON.parse(String(states.get("birthdays.month.09.json")))[0];
+    expect(item.age).eq(null);
+    expect(item.birthDate).eq("");
   });
 });

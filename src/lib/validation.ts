@@ -43,6 +43,7 @@ const eventSchema = z
     starts_at: isoDate,
     ends_at: isoDate,
     child_id: z.number().int().nullable().optional(),
+    user_id: z.number().int().nullable().optional(),
     custom_type_label: z.string().nullable().optional(),
     all_day: z.boolean().optional(),
     responsible_user_id: z.number().int().nullable().optional(),

@@ -1,4 +1,5 @@
 import { DateTime, Interval } from "luxon";
+import { birthdayBirthDate, birthdayIdentity } from "./birthdays";
 import type {
   BirthdayAggregation,
   CalendarEvent,
@@ -61,6 +62,13 @@ export function isEventActive(event: CalendarEvent, now: DateTime): boolean {
 }
 /** A stable semantic key for one occurrence, independent of volatile API IDs. */
 export function occurrenceKey(event: CalendarEvent): string {
+  if (event.event_type === "BIRTHDAY") {
+    return JSON.stringify([
+      event.event_type,
+      birthdayIdentity(event),
+      event.starts_at,
+    ]);
+  }
   if (event.event_type === "STAY" && event.generated) {
     return [
       event.child_id ?? "",
@@ -186,13 +194,12 @@ export function birthdayItem(
   now: DateTime,
   zone: string,
   dateFormat: string,
+  knownBirthDate?: string | null,
 ): BirthdayAggregation {
   const date = DateTime.fromISO(event.starts_at).setZone(zone);
-  const age = Number(event.age ?? 0);
-  const birthDate =
-    typeof event.birth_date === "string"
-      ? DateTime.fromISO(event.birth_date).toFormat(dateFormat)
-      : date.set({ year: date.year - age }).toFormat(dateFormat);
+  const birth = birthdayBirthDate(event, zone, knownBirthDate);
+  const age = event.age ?? (birth ? date.year - birth.year : null);
+  const birthDate = birth?.toFormat(dateFormat) ?? "";
   return {
     id: event.id,
     name: event.title ?? "",

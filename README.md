@@ -65,7 +65,7 @@ The adapter uses the following integration endpoints:
 
 Authentication is sent exclusively in the `Authorization: Bearer …` header. The API key is never added to a URL.
 
-### FamilienPlan 0.1.95 field mapping
+### Field mapping
 
 API `title` is used unchanged, including standard stays. Occurrence folders (`*.next`, `*.nextAfter`, and `birthdays.nextSignificant`) expose `description`; their existing `note` state mirrors it for compatibility. Both are cleared when a description is null, empty, or absent without a legacy note. JSON retains explicit null descriptions and all other API fields. Birthday events without optional fields remain valid.
 
@@ -95,7 +95,9 @@ Every event-type folder provides summaries, month groups, `next`, and `nextAfter
 
 ### Children and custody changes
 
-Each `children.<name>` folder exposes the child's `name`, `birthDate`, `age`, and a JSON summary preserving the API fields. FamilienPlan 0.1.95 supplies neither birth dates nor ages through `/children`; its birthday events have no child ID. Consequently `birthDate` is empty and `age` is `null` (unknown) for these children. The adapter only associates birthdays through an explicit `child_id`, never through titles or matching numeric birthday IDs. An API extension supplying `birth_date` on children or `child_id` on birthdays is required to populate these values reliably.
+Each `children.<name>` folder exposes the child's `name`, `birthDate`, `age`, and a JSON summary. `birthDate` uses the configured birthday date format (default `dd.MM.yyyy`); `age` is the current age in the configured time zone and advances on the birthday. A child birth date takes precedence; otherwise a birthday explicitly linked by `child_id` can supply `birth_date` or a birth year derived from its occurrence date and known age. Birthday titles or matching numeric birthday IDs alone do not establish that link. If the API supplies neither source, `birthDate` remains empty and `age` remains `null` (unknown).
+
+The child JSON replaces `default_responsible_user_id` with `default_responsible_username`. The name comes from the child response when supplied, or from known responsibility names matched by user ID in custody events and location responses. It is empty when no name can be resolved; the ID is retained internally for matching.
 
 When location retrieval is enabled, `children.<name>.location` contains the current responsible person and `nextChangeAt`; `next` and `nextAfter` contain the following custody periods. These projections are recalculated from the cached `STAY` events during the local minute tick. Consequently, reaching `nextChangeAt` updates the child location without waiting for another API synchronization. An API synchronization is still required to retrieve newly created, edited, or deleted source data from FamilienPlan.
 
@@ -178,6 +180,13 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+
+- (BenAhrdt) Add configurable waste reminders with combined collection messages, persistent acknowledgement, and automatic expiry.
+- (BenAhrdt) Sort birthday summaries by the next anniversary without negative day counts and add combined messages and nearest-day person arrays.
+- (BenAhrdt) Display child birth dates and current ages and replace the default responsible user ID with the resolved name in child JSON.
+- (BenAhrdt) Support FamilienPlan 0.1.99 child and person birthdays, string IDs, annual occurrences, and leap-day handling while retaining compatibility with older responses.
+
 ### 0.1.9 (2026-09-05)
 
 - (BenAhrdt) Redesign configuration pages with grouped sections and expandable trigger rules.

@@ -974,6 +974,64 @@
           },
           "sm": 12,
           "md": 12
+        },
+        "_reminder": {
+          "type": "header",
+          "text": {
+            "de": "Erinnerung",
+            "en": "Reminder"
+          },
+          "size": 3,
+          "xs": 12,
+          "newLine": true
+        },
+        "wasteReminderEnabled": {
+          "type": "checkbox",
+          "label": {
+            "de": "Erinnerung aktivieren",
+            "en": "Enable reminder"
+          },
+          "xs": 12,
+          "sm": 4,
+          "default": true
+        },
+        "wasteReminderDays": {
+          "type": "number",
+          "label": {
+            "de": "Tage vor der Abholung",
+            "en": "Days before collection"
+          },
+          "min": 0,
+          "step": 1,
+          "default": 1,
+          "xs": 12,
+          "sm": 4,
+          "disabled": "!data.wasteReminderEnabled",
+          "validator": "Number.isSafeInteger(data.wasteReminderDays) && data.wasteReminderDays >= 0",
+          "validatorNoSaveOnError": true,
+          "validatorErrorText": "Bitte eine ganze Zahl ab 0 eingeben."
+        },
+        "wasteReminderTime": {
+          "type": "text",
+          "label": {
+            "de": "Uhrzeit (HH:mm)",
+            "en": "Time (HH:mm)"
+          },
+          "default": "15:00",
+          "validator": "/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/.test(data.wasteReminderTime)",
+          "xs": 12,
+          "sm": 4,
+          "disabled": "!data.wasteReminderEnabled",
+          "validatorNoSaveOnError": true,
+          "validatorErrorText": "Bitte eine Uhrzeit im Format HH:mm eingeben."
+        },
+        "_reminderHelp": {
+          "type": "staticText",
+          "text": {
+            "de": "Fasst alle Abfallarten eines Abholtages zusammen. Über waste.reminder.reset quittieren. Die Erinnerung endet automatisch am Ende des Abholtages. Uhrzeit in der eingestellten Zeitzone.",
+            "en": "Groups all waste types for one collection day. Acknowledge via waste.reminder.reset. The reminder expires at the end of the collection day. Uses the configured time zone."
+          },
+          "xs": 12
         }
       },
       "style": {

@@ -190,7 +190,10 @@
     "wasteMappings": [],
     "wasteEmptyText": "",
     "triggerRules": [],
-    "triggerHistoryDays": 90
+    "triggerHistoryDays": 90,
+    "wasteReminderEnabled": true,
+    "wasteReminderDays": 1,
+    "wasteReminderTime": "15:00"
   },
   "encryptedNative": [
     "apiKey"
