@@ -226,6 +226,10 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+
+- (BenAhrdt) change color og class shedule hours in tab 
+
 ### 0.1.12 (2026-09-07)
 
 - (BenAhrdt) Add optional per-child timetable integration with server-provided lesson status, daily and weekly schedules, configurable polling, permission refresh, availability/error states, and cancellation on shutdown.
