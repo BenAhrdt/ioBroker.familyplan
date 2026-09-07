@@ -226,9 +226,9 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
-### **WORK IN PROGRESS**
+### 0.1.13 (2026-09-07)
 
-- (BenAhrdt) change color og class shedule hours in tab 
+- (BenAhrdt) change color og class shedule hours in tab
 
 ### 0.1.12 (2026-09-07)
 
@@ -255,13 +255,6 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
 - (BenAhrdt) Redesign configuration pages with grouped sections and expandable trigger rules.
 - (BenAhrdt) Add exact/contains title and description filters, selectable trigger-length units, and a separate catch-up window.
 - (BenAhrdt) Support unlimited trigger lengths with persistent active state and a manual reset button per rule.
-
-### 0.1.8 (2026-09-05)
-
-- (BenAhrdt) Adapt event descriptions to FamilienPlan 0.1.95, preserve API titles and complete event JSON, and clear removed notes.
-- (BenAhrdt) Correct appointment counts and refresh removed or reappearing event groups.
-- (BenAhrdt) Determine custody changes by responsible user IDs and consider the end of the current stay.
-- (BenAhrdt) Respect child-read permissions and report unavailable child ages as unknown without inferring birthday associations from names.
 
 Older changes are available in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 

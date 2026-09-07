@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "familyplan",
-    "version": "0.1.12",
+    "version": "0.1.13",
     "news": {
+      "0.1.13": {
+        "en": "change color og class shedule hours in tab",
+        "de": "Farbe der Stundenpläne im Tab ändern",
+        "ru": "измените цвет часов расписания занятий во вкладке",
+        "pt": "mudar a cor do horário das aulas na aba",
+        "nl": "verander de kleur van de lesuren in het tabblad",
+        "fr": "changer la couleur des horaires de cours",
+        "it": "cambia colore degli orari in tab",
+        "es": "cambiar el color del horario de clases en la pestaña",
+        "pl": "zmień kolor i godziny schedule klasy w zakładce",
+        "uk": "змінити колір і графік класу годин у вкладці",
+        "zh-cn": "在选项卡中更改上课时间的颜色"
+      },
       "0.1.12": {
         "en": "Add optional per-child timetable integration with server-provided lesson status, daily and weekly schedules, configurable polling, permission refresh, availability/error states, and cancellation on shutdown.\nCorrect numeric state roles to `value` and add the `d` unit to `daysLeft` and `daysUntil`.\nUse `sensor` for active and acknowledged states, `sensor.switch` for trigger activation status, and `state` for all-day flags; make reset and refresh buttons write-only.\nAdd `daysLeft` to children's current, next, and following custody projections, counting calendar days in the configured time zone until the respective change.\nRemove unnecessary child states from waste previews, including the waste event group, and update existing state definitions automatically.",
         "de": "Optionale Stundenplanintegration pro Kind mit Serverstatus, Tages- und Wochenplänen, konfigurierbaren Umfragen, Rechteaktualisierung, Verfügbarkeit/Fehlerstatus und Absage beim Shutdown.\nOrdnen Sie numerische Rollen zu „value“ und „d“ zu „daySleft“ und „daysUntil“ hinzu.\nVerwenden Sie `sensor` für aktiv und bestätigt, `sensor.switch` für Trigger und `State` für ganztägige Flags; Reset- und Refresh-Tasten schreibgeschützt.\nFügen Sie „DaySLeft“ zur Sorgerechtsprognose für Kinder hinzu und zählen Sie die Kalendertage in der eingestellten Zeitzone bis zur Änderung.\nEntferne unnötige Unterstatus aus Müllvorschauen, auch die Abfall-Eventgruppe, und aktualisiere bestehende Status-Definitionen automatisch.",
@@ -80,19 +93,6 @@
         "pl": "Dodaj opcjonalny filtr dla osób odpowiedzialnych dla reguł wyzwalania „STAY”, aby kolejne okresy opieki dla tego samego dziecka nie były zgodne z zasadą przyjazdu.",
         "uk": "Додайте додатковий фільтр відповідальної особи для правил запуску `STAY`, щоб послідовні інтервали опіки однієї дитини не відповідали правилу прибуття.",
         "zh-cn": "为 “STAY” 触发规则添加一个可选的责任人筛选条件，这样同一个孩子的连续监护间隔就不会都与到达规则相匹配。"
-      },
-      "0.1.6": {
-        "en": "Recalculate child custody projections every minute from cached `STAY` events so `responsibleName`, `nextChangeAt`, `next`, and `nextAfter` advance without an API synchronization.\nAccept nullable birthday fields, match child names embedded in birthday titles, and keep the child age current from the derived birth date.",
-        "de": "Berechnet Sorgerechtsprognosen jede Minute aus zwischengespeicherten `STAY`-Ereignissen neu, also `responsibleName`, `nextChangeAt`, `next` und `nextAfter` ohne API-Synchronisierung.\nAkzeptieren Sie nullfähige Felder, ordnen Sie Kindernamen in Geburtstagstiteln zu und achten Sie auf das Alter des Kindes.",
-        "ru": "Каждую минуту пересчитывайте прогнозы опеки над детьми на основе кэшированных событий `STAY`, чтобы «ResponsibleName», «NextChangeAt», «next» и «NextAfter» продвигались вперед без синхронизации API.\nПринимайте поля дня рождения, допускающие значение NULL, сопоставляйте имена детей, встроенные в названия дней рождения, и сохраняйте возраст ребенка в соответствии с полученной датой рождения.",
-        "pt": "Recalcule projeções de custódia infantil a cada minuto de eventos `STAY` em cache para que `responsibleName`, `nextChangeAt` e `nextAfter` avancem sem sincronização de API.\nAceite campos de aniversário anuláveis, combine nomes de crianças incorporados e mantenha a idade da criança atualizada.",
-        "nl": "Bereken elke minuut de projecties van de voogdij over kinderen opnieuw op basis van `STAY` gebeurtenissen die in de cache zijn opgeslagen, zodat `ResponsibleName`, `NextChangeAt`, `next` en `NextAfter` vooruit gaan zonder een API-synchronisatie.\nAccepteer verjaardagsvelden die niet geldig zijn, vergelijk de namen van kinderen die zijn ingebed in de verjaardagstitels en houd de leeftijd van het kind actueel vanaf de afgeleide geboortedatum.",
-        "fr": "Recalculez les prévisions de garde d'enfants chaque minute à partir des événements « STAY » mis en cache afin que « ResponsibleName », « NextChangeAt », « next » et « NextAfter » avancent sans synchronisation API.\nAcceptez les champs nulls, faites correspondre les prénoms des enfants dans les titres et actualisez l'âge de l'enfant à compter de sa date de naissance.",
-        "it": "Ricalcola le proiezioni sulla custodia dei figli ogni minuto dagli eventi «STAY» memorizzati nella cache senza sincronizzazione API.\nAccetti i campi di nascita nullabili, abbini i nomi dei bambini incorporati e mantenga l'età attuale a partire dalla data di nascita derivata.",
-        "es": "Recalcule las proyecciones de custodia de los hijos cada minuto a partir de los eventos «STAY» en caché para que `ResponsibleName', `next', `next` y `nextAfter` avancen sin sincronizar la API.\nAcepte campos de cumpleaños anulables, haga coincidir los nombres de los niños incluidos en los títulos de cumpleaños y mantenga la edad del niño actualizada.",
-        "pl": "Ponownie obliczaj prognozy opieki nad dzieckiem co minutę z buforowanych zdarzeń `STAY`, aby `ResponsibleName`, `NextChangeat`, `next` i `NEXTafter` przechodziły bez synchronizacji interfejsu API.\nZaakceptuj pola urodzinowe, które można anulować, dopasuj imiona dzieci osadzone w tytułach urodzin, i utrzymuj aktualny wiek dziecka od pochodnej daty urodzenia.",
-        "uk": "Кожну хвилину перераховуйте прогнози опіки над дітьми з кешованих подій `STAY`, щоб `ResponsibleName`, `NextChangeAT`, `next` та `nextAffter` відбувалися без синхронізації API.\nПриймайте поля дня народження, які можна обнулити, зіставляйте імена дітей, вбудовані в назви днів народження, та зберігайте вік дитини актуальним від отриманої дати народження.",
-        "zh-cn": "每分钟重新计算缓存的 “STAY” 事件中的儿童监护权预测，这样 “ResponsibleName”、“nextChangeat”、“nextChangeAt”、“next” 和 “nexTafter” 就可以在不进行 API 同步的情况下继续推进。\n接受可为空的生日字段，匹配生日标题中嵌入的孩子的名字，并保持子女年龄自派生出生日期起的最新年龄。"
       }
     },
     "titleLang": {

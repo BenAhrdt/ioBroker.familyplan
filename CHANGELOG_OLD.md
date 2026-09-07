@@ -2,6 +2,13 @@
 
 There are no older releases yet. Current release notes are maintained in the
 [README changelog](README.md#changelog).
+## 0.1.8 (2026-09-05)
+
+- (BenAhrdt) Adapt event descriptions to FamilienPlan 0.1.95, preserve API titles and complete event JSON, and clear removed notes.
+- (BenAhrdt) Correct appointment counts and refresh removed or reappearing event groups.
+- (BenAhrdt) Determine custody changes by responsible user IDs and consider the end of the current stay.
+- (BenAhrdt) Respect child-read permissions and report unavailable child ages as unknown without inferring birthday associations from names.
+
 ## 0.1.7 (2026-09-04)
 
 - (BenAhrdt) Add an optional responsible-person filter for `STAY` trigger rules so consecutive custody intervals for the same child do not both match an arrival rule.
