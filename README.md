@@ -226,7 +226,7 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
-### **WORK IN PROGRESS**
+### 0.1.12 (2026-09-07)
 
 - (BenAhrdt) Add optional per-child timetable integration with server-provided lesson status, daily and weekly schedules, configurable polling, permission refresh, availability/error states, and cancellation on shutdown.
 - (BenAhrdt) Correct numeric state roles to `value` and add the `d` unit to `daysLeft` and `daysUntil`.
@@ -258,10 +258,6 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
 - (BenAhrdt) Correct appointment counts and refresh removed or reappearing event groups.
 - (BenAhrdt) Determine custody changes by responsible user IDs and consider the end of the current stay.
 - (BenAhrdt) Respect child-read permissions and report unavailable child ages as unknown without inferring birthday associations from names.
-
-### 0.1.7 (2026-09-04)
-
-- (BenAhrdt) Add an optional responsible-person filter for `STAY` trigger rules so consecutive custody intervals for the same child do not both match an arrival rule.
 
 Older changes are available in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 
