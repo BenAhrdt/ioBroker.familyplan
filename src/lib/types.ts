@@ -193,6 +193,8 @@ export interface AdapterConfigShape {
   futureDays: number;
   rangePeriod: "week" | "month" | "quarter" | "year";
   pollInterval: number;
+  timetableEnabled: boolean;
+  timetableInterval: number;
   retryCount: number;
   /**
    *

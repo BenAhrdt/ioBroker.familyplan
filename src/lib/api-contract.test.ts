@@ -1,3 +1,5 @@
+import { FamilienPlanApiClient, ApiError } from "./api-client";
+import { parseTimetable, type Timetable } from "./timetable";
 import { expect } from "chai";
 import { DateTime } from "luxon";
 import type {} from "./adapter-config";
@@ -37,6 +39,17 @@ interface ProjectionAdapter {
   events: CalendarEvent[];
   childrenData: Child[];
   childBirthdayEvents: CalendarEvent[];
+  writeTimetable(root: string, data: Timetable): Promise<void>;
+  pollTimetables(): Promise<void>;
+  invalidateTimetables(message: string): Promise<void>;
+  onUnload(callback: () => void): void;
+  client(): FamilienPlanApiClient;
+  setTimeout(callback: () => void, delay: number): ioBroker.Timeout;
+  clearTimeout(timer: ioBroker.Timeout): void;
+  log: { warn(message: string): void };
+  syncing: boolean;
+  writeWaste(events: CalendarEvent[], now: DateTime): Promise<void>;
+  writeFields(root: string, data: Record<string, Value>): Promise<void>;
   writeEvents(events: CalendarEvent[], now: DateTime): Promise<void>;
   writeChildrenFromEvents(children: Child[], now: DateTime): Promise<void>;
   writeBirthdays(events: CalendarEvent[], now: DateTime): Promise<void>;
@@ -57,8 +70,15 @@ const stay: CalendarEvent = {
 function harness(states = new Map<string, Value>()): {
   adapter: ProjectionAdapter;
   states: Map<string, Value>;
+  objects: Map<
+    string,
+    { type: string; common?: Partial<ioBroker.StateCommon> }
+  >;
 } {
-  const objects = new Map<string, { type: string }>();
+  const objects = new Map<
+    string,
+    { type: string; common?: Partial<ioBroker.StateCommon> }
+  >();
   const adapter = Object.assign(Object.create(FamilienPlan.prototype), {
     config: {
       timezone: "Europe/Berlin",
@@ -80,6 +100,7 @@ function harness(states = new Map<string, Value>()): {
     events: [],
     namespace: "familyplan.0",
     triggerResets: new Set(),
+    timetableErrors: new Map(),
     wasteReminderQueue: Promise.resolve(),
     triggerCounts: new Map(),
     triggerLastTriggered: new Map(),
@@ -116,10 +137,86 @@ function harness(states = new Map<string, Value>()): {
       }
     },
   }) as ProjectionAdapter;
-  return { adapter, states };
+  return { adapter, states, objects };
 }
 
 describe("FamilienPlan 0.1.95 API contract", () => {
+  it("assigns numeric roles, day units and semantic boolean roles", async () => {
+    const { adapter, objects } = harness();
+    await adapter.writeFields("example", {
+      daysLeft: 3,
+      daysUntil: null,
+      age: null,
+      count: 2,
+      enabled: true,
+      acknowledged: true,
+      active: true,
+      allDay: true,
+      title: "Termin",
+      json: "{}",
+    });
+    for (const key of ["daysLeft", "daysUntil", "age", "count"]) {
+      expect(objects.get(`example.${key}`)?.common).include({
+        type: "number",
+        role: "value",
+      });
+    }
+    for (const key of ["daysLeft", "daysUntil"]) {
+      expect(objects.get(`example.${key}`)?.common?.unit).eq("d");
+    }
+    expect(objects.get("example.acknowledged")?.common?.role).eq("sensor");
+    expect(objects.get("example.active")?.common?.role).eq("sensor");
+    expect(objects.get("example.allDay")?.common?.role).eq("state");
+    expect(objects.get("example.enabled")?.common?.role).eq("sensor.switch");
+    expect(objects.get("example.title")?.common?.role).eq("text");
+    expect(objects.get("example.json")?.common?.role).eq("json");
+  });
+  it("removes legacy child states from waste previews", async () => {
+    const { adapter, states, objects } = harness();
+    for (const key of ["next", "nextAfter"]) {
+      objects.set(`waste.${key}.child`, { type: "state" });
+      states.set(`waste.${key}.child`, "Emma");
+    }
+    adapter.config.wasteEnabled = true;
+    await adapter.writeWaste([{ ...stay, event_type: "WASTE" }], now);
+    expect(objects.get("waste.reminder.reset")?.common).include({
+      role: "button",
+      read: false,
+      write: true,
+    });
+    await adapter.writeEvents([{ ...stay, event_type: "WASTE" }], now);
+    expect(objects.has("events.appointment.waste.next.child")).eq(false);
+    for (const key of ["next", "nextAfter"]) {
+      expect(objects.has(`waste.${key}.child`)).eq(false);
+      expect(states.has(`waste.${key}.child`)).eq(false);
+    }
+  });
+  it("projects days until each childcare change and clears missing forecasts", async () => {
+    const { adapter, states } = harness();
+    adapter.config.fetchLocations = true;
+    adapter.events = [
+      { ...stay, starts_at: "2026-09-04T08:00:00+02:00" },
+      {
+        ...stay,
+        responsible_user_id: 4,
+        starts_at: "2026-09-06T08:00:00+02:00",
+        ends_at: "2026-09-07T08:00:00+02:00",
+      },
+      {
+        ...stay,
+        starts_at: "2026-09-07T08:00:00+02:00",
+        ends_at: "2026-09-08T08:00:00+02:00",
+      },
+    ];
+    await adapter.writeChildrenFromEvents(adapter.childrenData, now);
+    expect(states.get("children.emma.location.daysLeft")).eq(1);
+    expect(states.get("children.emma.location.next.daysLeft")).eq(1);
+    expect(states.get("children.emma.location.nextAfter.daysLeft")).eq(2);
+    adapter.events = adapter.events.slice(0, 1);
+    await adapter.writeChildrenFromEvents(adapter.childrenData, now);
+    expect(states.get("children.emma.location.next.daysLeft")).eq(0);
+    expect(states.get("children.emma.location.nextAfter.daysLeft")).eq(0);
+  });
   it("writes API stay titles and descriptions and clears removed notes on refresh", async () => {
     const { adapter, states } = harness();
     for (const title of ["Papa-Wochenende", "Emma bei Papa"]) {
@@ -269,6 +366,14 @@ describe("Trigger lifecycle", () => {
     const first = harness();
     first.adapter.config.triggerRules = [rule];
     await first.adapter.processTriggers([stay], firedAt);
+    expect(first.objects.get("triggers.ankunft.enabled")?.common?.role).eq(
+      "sensor.switch",
+    );
+    expect(first.objects.get("triggers.ankunft.reset")?.common).include({
+      role: "button",
+      read: false,
+      write: true,
+    });
     expect(first.states.get("triggers.ankunft.active")).eq(true);
     expect(first.states.get("triggers.ankunft.count")).eq(1);
     const restarted = harness(first.states);
@@ -742,5 +847,346 @@ describe("FamilienPlan 0.1.100 birthday name projections", () => {
       expect(states.get("birthdays.next.birthDate")).eq("");
       expect(states.get("birthdays.next.age")).eq(null);
     }
+  });
+});
+
+const timetableLesson = {
+  weekday: 1,
+  start: "08:00",
+  end: "08:45",
+  subject: "Mathematik",
+  room: "",
+  teacher: "Frau Beispiel",
+};
+const timetableData: Timetable = {
+  childId: 1,
+  childName: "Emma",
+  status: "lesson",
+  statusText: "Unterricht",
+  evaluatedAt: "2026-09-08T08:15:00+09:00",
+  statusDate: "2026-09-08",
+  date: "2026-09-08",
+  timezone: "Asia/Tokyo",
+  configured: true,
+  basis: "planned",
+  currentLesson: timetableLesson,
+  nextLesson: {
+    ...timetableLesson,
+    start: "09:00",
+    end: "09:45",
+    subject: "Deutsch",
+  },
+  dailySchedule: [timetableLesson],
+  weeklySchedule: [timetableLesson],
+  plan: {
+    timezone: "Asia/Tokyo",
+    valid_from: null,
+    valid_until: null,
+    days_off: [],
+    lessons: [timetableLesson],
+  },
+};
+
+describe("Timetable integration", () => {
+  it("preserves server status, timezone, JSON and clears lessons through the school day", async () => {
+    const { adapter, states, objects } = harness();
+    const root = "children.emma.timetable";
+    const sequence: Timetable[] = [
+      { ...timetableData, status: "before_school", currentLesson: null },
+      timetableData,
+      { ...timetableData, status: "break", currentLesson: null },
+      {
+        ...timetableData,
+        currentLesson: timetableData.nextLesson,
+        nextLesson: null,
+      },
+      {
+        ...timetableData,
+        status: "finished",
+        currentLesson: null,
+        nextLesson: null,
+      },
+      ...(["no_school", "not_configured", "outside_validity"] as const).map(
+        (status) => ({
+          ...timetableData,
+          status,
+          configured: status !== "not_configured",
+          currentLesson: null,
+          nextLesson: null,
+          dailySchedule: [],
+        }),
+      ),
+    ];
+    for (const data of sequence) {
+      await adapter.writeTimetable(root, data);
+      expect(states.get(`${root}.status`)).eq(data.status);
+      expect(states.get(`${root}.statusText`)).eq(data.statusText);
+      expect(states.get(`${root}.configured`)).eq(data.configured);
+      expect(states.get(`${root}.evaluatedAt`)).eq(data.evaluatedAt);
+      expect(states.get(`${root}.timezone`)).eq("Asia/Tokyo");
+      expect(states.get(`${root}.available`)).eq(true);
+      for (const key of ["currentLesson", "nextLesson"] as const) {
+        for (const field of [
+          "subject",
+          "start",
+          "end",
+          "room",
+          "teacher",
+        ] as const) {
+          expect(states.get(`${root}.${key}.${field}`)).eq(
+            data[key]?.[field] ?? "",
+          );
+        }
+      }
+      for (const key of ["dailySchedule", "weeklySchedule"] as const) {
+        expect(JSON.parse(String(states.get(`${root}.${key}`)))).deep.eq(
+          data[key],
+        );
+        expect(objects.get(`${root}.${key}`)?.common?.role).eq("json");
+      }
+      expect(JSON.parse(String(states.get(`${root}.json`)))).deep.eq(data);
+    }
+    for (const object of objects.values()) {
+      if (object.type === "state") {
+        expect(object.common).include({ read: true, write: false });
+      }
+    }
+    expect(adapter.events).deep.eq([]);
+  });
+
+  function pollingHarness() {
+    const result = harness();
+    const timers = new Map<ioBroker.Timeout, () => void>();
+    const warnings: string[] = [];
+    result.adapter.config.timetableEnabled = true;
+    result.adapter.setTimeout = (callback, delay) => {
+      expect(delay).eq(60000);
+      const timer = {} as ioBroker.Timeout;
+      timers.set(timer, callback);
+      return timer;
+    };
+    result.adapter.clearTimeout = (timer) => {
+      timers.delete(timer);
+    };
+    result.adapter.log.warn = (message) => {
+      warnings.push(message);
+    };
+    return { ...result, timers, warnings };
+  }
+
+  it("isolates per-child failures, suppresses duplicate warnings and recovers", async () => {
+    const { adapter, states, warnings, timers } = pollingHarness();
+    const children = [
+      ...adapter.childrenData,
+      { id: 2, name: "Ben", default_responsible_user_id: null },
+    ];
+    let failure: number | undefined;
+    adapter.client = () =>
+      ({
+        children: async () => children,
+        timetable: async (id: number) => {
+          if (id === 1 && failure !== undefined) {
+            throw new ApiError("Testfehler", failure);
+          }
+          return { ...timetableData, childId: id };
+        },
+        close: () => {},
+      }) as unknown as FamilienPlanApiClient;
+    await adapter.pollTimetables();
+    const successfulUpdate = states.get(
+      "children.emma.timetable.lastSuccessfulUpdate",
+    );
+    for (const code of [401, 403, 404, 500]) {
+      failure = code;
+      await adapter.pollTimetables();
+      const warningCount = warnings.length;
+      await adapter.pollTimetables();
+      expect(warnings.length).eq(warningCount);
+      expect(states.get("children.emma.timetable.available")).eq(false);
+      expect(states.get("children.emma.timetable.status")).eq("lesson");
+      expect(states.get("children.emma.timetable.lastSuccessfulUpdate")).eq(
+        successfulUpdate,
+      );
+      expect(states.get("children.emma.timetable.lastError")).not.eq("");
+      expect(states.get("children.ben.timetable.available")).eq(true);
+      expect(timers.size).eq(1);
+    }
+    failure = undefined;
+    await adapter.pollTimetables();
+    expect(states.get("children.emma.timetable.available")).eq(true);
+    expect(states.get("children.emma.timetable.lastError")).eq("");
+    await adapter.writeEvents([stay], now);
+    expect(states.get("appointments.count")).eq(1);
+  });
+
+  it("removes revoked children, recreates returning states and invalidates on permission/network failures", async () => {
+    const { adapter, states, objects } = pollingHarness();
+    let children = adapter.childrenData;
+    let error: Error | undefined;
+    adapter.client = () =>
+      ({
+        children: async () => {
+          if (error) {
+            throw error;
+          }
+          return children;
+        },
+        timetable: async () => timetableData,
+        close: () => {},
+      }) as unknown as FamilienPlanApiClient;
+    await adapter.pollTimetables();
+    for (const problem of [
+      new ApiError("Kein Scope", 403),
+      new ApiError("Netzwerk", undefined, true),
+    ]) {
+      error = problem;
+      await adapter.pollTimetables();
+      expect(states.get("children.emma.timetable.available")).eq(false);
+      expect(states.get("children.emma.timetable.lastError")).eq(
+        problem.message,
+      );
+    }
+    error = undefined;
+    children = [];
+    await adapter.pollTimetables();
+    expect(objects.has("children.emma.timetable")).eq(false);
+    children = adapter.childrenData;
+    await adapter.pollTimetables();
+    expect(states.get("children.emma.timetable.currentLesson.subject")).eq(
+      "Mathematik",
+    );
+    await adapter.invalidateTimetables("Neustart");
+    expect(states.get("children.emma.timetable.available")).eq(false);
+  });
+
+  it("does not overlap polls or calendar synchronization and aborts pending requests on unload", async () => {
+    const { adapter, states, timers } = pollingHarness();
+    let calls = 0;
+    let aborted = false;
+    let started!: () => void;
+    const requestStarted = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    let rejectRequest!: (reason: Error) => void;
+    adapter.client = () =>
+      ({
+        children: async () => adapter.childrenData,
+        timetable: () => {
+          calls++;
+          started();
+          return new Promise<Timetable>((_, reject) => {
+            rejectRequest = reject;
+          });
+        },
+        close: () => {
+          aborted = true;
+          rejectRequest(new Error("Aborted"));
+        },
+      }) as unknown as FamilienPlanApiClient;
+    adapter.syncing = true;
+    await adapter.pollTimetables();
+    expect(calls).eq(0);
+    expect(timers.size).eq(1);
+    adapter.syncing = false;
+    const pending = adapter.pollTimetables();
+    await requestStarted;
+    await adapter.pollTimetables();
+    expect(calls).eq(1);
+    await new Promise<void>((resolve) => adapter.onUnload(resolve));
+    await pending;
+    expect(aborted).eq(true);
+    expect(timers.size).eq(0);
+    expect(states.get("children.emma.timetable.available")).eq(false);
+    expect(states.has("children.emma.timetable.status")).eq(false);
+    await adapter.pollTimetables();
+    expect(calls).eq(1);
+  });
+
+  it("clears scheduled polls on unload and does not poll when disabled", async () => {
+    const { adapter, timers } = pollingHarness();
+    adapter.client = () =>
+      ({
+        children: async () => [],
+        close: () => {},
+      }) as unknown as FamilienPlanApiClient;
+    adapter.config.timetableEnabled = false;
+    await adapter.pollTimetables();
+    expect(timers.size).eq(0);
+    adapter.config.timetableEnabled = true;
+    await adapter.pollTimetables();
+    expect(timers.size).eq(1);
+    await new Promise<void>((resolve) => adapter.onUnload(resolve));
+    expect(timers.size).eq(0);
+  });
+
+  it("validates the contract without exposing response contents in validation errors", () => {
+    expect(
+      parseTimetable({ ...timetableData, extension: "preserved" }).extension,
+    ).eq("preserved");
+    for (const patch of [
+      { currentLesson: { ...timetableLesson, weekday: 7 } },
+      { nextLesson: { ...timetableLesson, start: "24:00" } },
+      { dailySchedule: null },
+      { evaluatedAt: "bad" },
+      { basis: "live" },
+    ]) {
+      expect(() => parseTimetable({ ...timetableData, ...patch })).to.throw(
+        "Ungültige Stundenplan-Antwort",
+      );
+    }
+  });
+
+  it("uses the integration endpoint and bearer authentication without duplicate prefixes or on parameter", async () => {
+    for (const suffix of ["", "/", "/api/v1", "/api/v1/integrations/v1/"]) {
+      const api = new FamilienPlanApiClient({
+        baseUrl: `https://example.test/family${suffix}`,
+        apiKey: "secret",
+        timeoutMs: 1000,
+        verifySsl: true,
+        fetchImpl: async (url, init) => {
+          expect(String(url)).eq(
+            "https://example.test/family/api/v1/integrations/v1/children/1/timetable",
+          );
+          expect((init?.headers as Record<string, string>).Authorization).eq(
+            "Bearer secret",
+          );
+          return new Response(JSON.stringify(timetableData));
+        },
+      });
+      expect(await api.timetable(1)).deep.eq(timetableData);
+      api.close();
+    }
+  });
+
+  it("aborts HTTP requests on client close and rejects mismatched child responses", async () => {
+    let signal: AbortSignal | null | undefined;
+    const api = new FamilienPlanApiClient({
+      baseUrl: "https://example.test",
+      apiKey: "secret",
+      timeoutMs: 1000,
+      verifySsl: true,
+      fetchImpl: (_, init) => {
+        signal = init?.signal;
+        return new Promise((_, reject) =>
+          signal?.addEventListener("abort", () =>
+            reject(new DOMException("Aborted", "AbortError")),
+          ),
+        );
+      },
+    });
+    const pending = api.timetable(1).catch((error: unknown) => error);
+    api.close();
+    expect(signal?.aborted).eq(true);
+    expect(await pending).instanceOf(ApiError);
+    const mismatch = new FamilienPlanApiClient({
+      baseUrl: "https://example.test",
+      apiKey: "secret",
+      timeoutMs: 1000,
+      verifySsl: true,
+      fetchImpl: async () =>
+        new Response(JSON.stringify({ ...timetableData, childId: 2 })),
+    });
+    const error = await mismatch.timetable(1).catch((error: unknown) => error);
+    expect(error).instanceOf(ApiError);
   });
 });

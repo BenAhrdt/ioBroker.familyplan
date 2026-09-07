@@ -10,7 +10,7 @@
   "homepage": "https://github.com/BenAhrdt/ioBroker.familyplan",
   "license": "MIT",
   "keywords": [
-    "iobroker",
+    "ioBroker",
     "calendar",
     "family",
     "familyplan"
@@ -36,7 +36,6 @@
   "scripts": {
     "prebuild": "rimraf build",
     "build": "tsc -p tsconfig.build.json",
-    "prepare": "npm run build",
     "watch:ts": "tsc -p tsconfig.build.json --watch",
     "dev-server": "dev-server",
     "release": "release-script",
@@ -46,7 +45,8 @@
     "test:package": "mocha test/package.test.js --exit",
     "test:integration": "mocha test/integration.test.js --exit",
     "test": "npm run test:unit && npm run test:package",
-    "validate": "npm run check && npm run lint && npm test && npm run build"
+    "validate": "npm run check && npm run lint && npm test && npm run build",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "@iobroker/adapter-core": "^3.4.3",
@@ -63,14 +63,9 @@
     "@iobroker/eslint-config": "^2.3.4",
     "@iobroker/testing": "^5.3.0",
     "@tsconfig/node22": "^22.0.6",
-    "@types/chai": "^4.3.20",
     "@types/iobroker": "npm:@iobroker/types@^7.1.0",
     "@types/luxon": "^3.7.1",
-    "@types/mocha": "^10.0.10",
     "@types/node": "^22.20.0",
-    "chai": "^4.5.0",
-    "eslint": "^9.35.0",
-    "mocha": "^11.7.1",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.2"

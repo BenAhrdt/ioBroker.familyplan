@@ -211,7 +211,7 @@ describe("API client", () => {
     const timeout = async (_i: string | URL, init?: RequestInit) =>
       new Promise<Response>((_r, reject) =>
         init?.signal?.addEventListener("abort", () =>
-          reject(Object.assign(new Error(), { name: "AbortError" })),
+          reject(init.signal?.reason as Error),
         ),
       );
     try {

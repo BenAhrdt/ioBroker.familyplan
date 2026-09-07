@@ -48,6 +48,7 @@ The configuration contains the following groups:
 
 - **Connection:** base URL, protected API key, connection test, IANA time zone, HTTP timeout, and TLS certificate verification.
 - **Polling:** week, month, quarter, or year range with optional days before and after it, polling interval, retry settings, optional child IDs, custody/location information, and object retention.
+- **Timetable:** optional timetable polling (disabled by default), with a 60-second default interval and a 10-second minimum.
 - **Timeline:** number of days, optional event-type filter, output template, separators, and date/time formats.
 - **Birthdays and waste:** relative output templates, separators, empty text, and waste-title mappings. All waste types returned by the API are imported.
 - **Triggers:** named rules with event type, optional custom type, child name, trigger position, offset/unit, and catch-up window.
@@ -62,6 +63,7 @@ The adapter uses the following integration endpoints:
 - `GET /api/v1/integrations/v1/children`
 - `GET /api/v1/integrations/v1/calendar?from_at=…&to_at=…[&child_id=…]`
 - `GET /api/v1/integrations/v1/children/{id}/location`
+- `GET /api/v1/integrations/v1/children/{id}/timetable` (optional server extension)
 
 Authentication is sent exclusively in the `Authorization: Bearer …` header. The API key is never added to a URL.
 
@@ -70,6 +72,48 @@ Authentication is sent exclusively in the `Authorization: Bearer …` header. Th
 API `title` is used unchanged, including standard stays. Occurrence folders (`*.next`, `*.nextAfter`, and `birthdays.nextSignificant`) expose `description`; their existing `note` state mirrors it for compatibility. Both are cleared when a description is null, empty, or absent without a legacy note. JSON retains explicit null descriptions and all other API fields. Birthday events without optional fields remain valid.
 
 Location forecasts consider both `current_until` and `next_change_at`: the latter only identifies the next confirmed explicit stay. Calendar-based responsibility changes are compared by user ID. Calendar requests use encoded timestamps and chunks of 180 days, below the API limit of 366 days. Restricted calendar responses are used as supplied; children are only requested with `read:children`.
+
+### Timetables
+
+Enable **Fetch timetables** in the **Timetable** configuration tab. The FamilienPlan server must include the integration timetable API extension; older versions without the endpoint remain usable for all other adapter features. The key needs `read:children`. Key restrictions and the associated person's current child permissions apply together. Timetables are fetched for all permitted children, independently of the calendar's optional child-ID filter.
+
+The adapter uses the existing base URL, Bearer key, HTTP timeout and TLS settings. Recognized API prefixes are normalized to avoid duplicate `/api/v1/integrations/v1` paths. It never calls the internal browser endpoint or supplies the optional `on` parameter. The children list is refreshed before each timetable polling cycle to recheck permissions. Timetable requests run sequentially without overlapping polling cycles or calendar synchronization; the configured interval starts after a cycle completes. Failed requests are retried on the next cycle. Pending timetable HTTP requests and the polling timer are cancelled on adapter shutdown.
+
+The admin tab displays a timetable card for each child above the event search, including the current subject, teacher, lesson times and room, or the server-provided school-day status (break, before school, finished, or no school). The next lesson appears when available. An expandable weekly plan groups lessons by weekday and keeps its expanded state during live updates. Failed fetches show an unavailable notice and label any retained weekly plan as the last known version.
+
+Each existing child path gains a `children.<name>.timetable` folder with read-only, acknowledged states:
+
+| State | Meaning |
+| --- | --- |
+| `status`, `statusText` | Server status code and description |
+| `configured` | Whether a plan has been saved |
+| `timezone` | Server-provided timetable time zone |
+| `evaluatedAt`, `statusDate` | Server evaluation timestamp and status date |
+| `date` | Date of the daily schedule |
+| `basis` | `planned`: regular planned lessons, not live substitutions |
+| `currentLesson.subject/start/end/room/teacher` | Current lesson; all fields empty when the server returns null |
+| `nextLesson.subject/start/end/room/teacher` | Next lesson of the current day; all fields empty when null |
+| `dailySchedule`, `weeklySchedule` | JSON arrays of lessons |
+| `json` | Complete validated API response, including the underlying `plan` |
+| `available` | Whether the latest fetch returned usable data |
+| `lastSuccessfulUpdate` | Timestamp of the most recent successful fetch |
+| `lastError` | Fetch error; empty after success |
+
+The status is copied from the server without recalculating it in the ioBroker time zone:
+
+| Status | Meaning |
+| --- | --- |
+| `lesson` | A lesson is in progress |
+| `break` | Break between today's lessons |
+| `before_school` | Before today's first lesson |
+| `finished` | Today's final lesson has ended |
+| `no_school` | No lessons today, an explicitly free day, or an intentionally empty saved plan |
+| `not_configured` | No timetable has been saved |
+| `outside_validity` | Today is outside the saved plan's validity range |
+
+Lesson start is inclusive and end is exclusive according to the server. Lesson `start`/`end` values remain local `HH:MM` strings in the supplied time zone, dates remain `YYYY-MM-DD`, and `evaluatedAt` retains its original offset. Lesson weekdays range from Monday `0` to Sunday `6`. `weeklySchedule` is the regular week; `dailySchedule` respects validity and explicit days off. Holidays are not automatically excluded. Timetables are separate from calendar events and never enter appointment lists or calendar triggers.
+
+On HTTP 401, 403, 404, network/server errors or invalid responses, `available` becomes `false` and `lastError` explains the failure. Previous valid values and `lastSuccessfulUpdate` remain unchanged: consumers must check `available` and the timestamp before treating those values as current. An error never becomes `no_school` or `not_configured`. Before the first successful fetch, lesson/status data may be absent. Repeated identical failures are logged only once until recovery or a different error. If the children list fails, all existing timetable folders are marked unavailable; children no longer returned by the permitted list have their timetable folders removed. Existing timetable data is also marked unavailable on restart or when the feature is disabled.
 
 ## Objects
 
@@ -154,6 +198,8 @@ Use an “Object changed” block for `familyplan.0.triggers.<rule-id>.count` wi
 
 The API key is encrypted through `encryptedNative`, protected through `protectedNative`, and redacted together with authorization headers in error messages. Invalid individual events are skipped without rejecting an otherwise valid response. Never publish diagnostics or configuration exports containing a real key.
 
+The adapter is distributed as a compiled npm package; direct installation from the Git source is disabled (`common.noGit`). `npm pack` builds the adapter before packaging. Admin configuration translations include German and English; other supported languages currently use English fallback texts.
+
 ## Development
 
 Install the development dependencies and run the full local validation:
@@ -180,6 +226,14 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+
+- (BenAhrdt) Add optional per-child timetable integration with server-provided lesson status, daily and weekly schedules, configurable polling, permission refresh, availability/error states, and cancellation on shutdown.
+- (BenAhrdt) Correct numeric state roles to `value` and add the `d` unit to `daysLeft` and `daysUntil`.
+- (BenAhrdt) Use `sensor` for active and acknowledged states, `sensor.switch` for trigger activation status, and `state` for all-day flags; make reset and refresh buttons write-only.
+- (BenAhrdt) Add `daysLeft` to children's current, next, and following custody projections, counting calendar days in the configured time zone until the respective change.
+- (BenAhrdt) Remove unnecessary child states from waste previews, including the waste event group, and update existing state definitions automatically.
+
 ### 0.1.11 (2026-09-05)
 
 - (BenAhrdt) Support FamilienPlan 0.1.100 birthday names and birth dates, prefer full names, and preserve original titles and all source fields.

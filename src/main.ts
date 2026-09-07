@@ -1,3 +1,4 @@
+import type { Timetable } from "./lib/timetable";
 import * as utils from "@iobroker/adapter-core";
 import { DateTime } from "luxon";
 import { FamilienPlanApiClient, ApiError } from "./lib/api-client";
@@ -43,6 +44,10 @@ type StateType = "string" | "number" | "boolean";
 export class FamilienPlan extends utils.Adapter {
   private apiTimer?: ioBroker.Timeout;
   private clockTimer?: ioBroker.Timeout;
+  private timetableTimer?: ioBroker.Timeout;
+  private timetableClient?: FamilienPlanApiClient;
+  private timetablePoll?: Promise<void>;
+  private readonly timetableErrors = new Map<string, string>();
   private syncing = false;
   private evaluating = false;
   private processingTriggers = false;
@@ -80,6 +85,9 @@ export class FamilienPlan extends utils.Adapter {
   }
   private async onReady(): Promise<void> {
     await this.setStateAsync("info.connection", false, true);
+    await this.extendObjectAsync("control.refresh", {
+      common: { read: false },
+    });
     await this.setStateAsync("control.refresh", false, true);
     await this.ensureState(
       "info.lastTriggerCheck",
@@ -106,9 +114,15 @@ export class FamilienPlan extends utils.Adapter {
         "SSL-Zertifikatsprüfung ist deaktiviert. Das ist unsicher.",
       );
     }
+    await this.invalidateTimetables(
+      this.cfg.timetableEnabled
+        ? "Noch keine aktuelle Stundenplan-Abfrage."
+        : "Stundenplan-Abfrage ist deaktiviert.",
+    );
     await this.restoreKnownEvents();
     this.scheduleClock();
     await this.sync();
+    await this.pollTimetables();
   }
   private onUnload(callback: () => void): void {
     this.stopped = true;
@@ -118,7 +132,16 @@ export class FamilienPlan extends utils.Adapter {
     if (this.clockTimer) {
       this.clearTimeout(this.clockTimer);
     }
-    callback();
+    if (this.timetableTimer) {
+      this.clearTimeout(this.timetableTimer);
+      this.timetableTimer = undefined;
+    }
+    this.timetableClient?.close();
+    if (this.timetablePoll) {
+      void this.timetablePoll.finally(callback);
+    } else {
+      callback();
+    }
   }
   private async onStateChange(
     id: string,
@@ -244,6 +267,165 @@ export class FamilienPlan extends utils.Adapter {
         ),
     });
   }
+  private scheduleTimetable(): void {
+    if (this.stopped || !this.cfg.timetableEnabled) {
+      return;
+    }
+    const seconds = Math.max(10, Number(this.cfg.timetableInterval) || 60);
+    this.timetableTimer = this.setTimeout(() => {
+      this.timetableTimer = undefined;
+      void this.pollTimetables();
+    }, seconds * 1000);
+  }
+
+  private async pollTimetables(): Promise<void> {
+    if (this.stopped || !this.cfg.timetableEnabled || this.timetablePoll) {
+      return;
+    }
+    if (this.timetableTimer) {
+      this.clearTimeout(this.timetableTimer);
+      this.timetableTimer = undefined;
+    }
+    if (this.syncing) {
+      this.scheduleTimetable();
+      return;
+    }
+    this.timetablePoll = this.fetchTimetables();
+    try {
+      await this.timetablePoll;
+    } finally {
+      this.timetablePoll = undefined;
+      this.scheduleTimetable();
+    }
+  }
+
+  private async invalidateTimetables(message: string): Promise<void> {
+    for (const root of await this.folderIds("children")) {
+      if (root.endsWith(".timetable")) {
+        await this.writeFields(root, { available: false, lastError: message });
+      }
+    }
+  }
+
+  private logTimetableError(root: string, message: string): void {
+    if (this.timetableErrors.get(root) !== message) {
+      this.log.warn(`Stundenplan (${root}): ${message}`);
+      this.timetableErrors.set(root, message);
+    }
+  }
+
+  private async fetchTimetables(): Promise<void> {
+    const api = this.client();
+    this.timetableClient = api;
+    try {
+      // Refresh permissions independently of the calendar polling interval.
+      const children = await api.children();
+      if (this.stopped) {
+        return;
+      }
+      this.timetableErrors.delete("children");
+      const roots = new Set(
+        children.map((child) => `${this.childRoot(child, children)}.timetable`),
+      );
+      for (const root of await this.folderIds("children")) {
+        if (root.endsWith(".timetable") && !roots.has(root)) {
+          await this.delObjectAsync(root, { recursive: true });
+          this.timetableErrors.delete(root);
+          for (const id of this.writtenStates.keys()) {
+            if (id.startsWith(`${root}.`)) {
+              this.writtenStates.delete(id);
+            }
+          }
+        }
+      }
+      for (const child of children) {
+        if (this.stopped) {
+          return;
+        }
+        const childRoot = this.childRoot(child, children);
+        const root = `${childRoot}.timetable`;
+        await this.ensureFolder(childRoot, child.name);
+        if (!(await this.getObjectAsync(root))) {
+          for (const id of this.writtenStates.keys()) {
+            if (id.startsWith(`${root}.`)) {
+              this.writtenStates.delete(id);
+            }
+          }
+        }
+        await this.ensureFolder(root, "Stundenplan");
+        await this.writeFields(root, { available: false });
+        if (!(await this.getObjectAsync(`${root}.lastSuccessfulUpdate`))) {
+          await this.writeFields(root, { lastSuccessfulUpdate: "" });
+        }
+        try {
+          const data = await api.timetable(child.id);
+          if (this.stopped) {
+            return;
+          }
+          await this.writeTimetable(root, data);
+          this.timetableErrors.delete(root);
+        } catch (error) {
+          if (this.stopped) {
+            return;
+          }
+          const message =
+            error instanceof ApiError && error.status === 404
+              ? "Kind oder Stundenplan-API nicht verfügbar. Benötigt einen FamilienPlan-Server mit Stundenplan-Erweiterung."
+              : this.errorText(error);
+          await this.writeFields(root, {
+            available: false,
+            lastError: message,
+          });
+          this.logTimetableError(root, message);
+        }
+      }
+    } catch (error) {
+      if (!this.stopped) {
+        const message = this.errorText(error);
+        await this.invalidateTimetables(message);
+        this.logTimetableError("children", message);
+      }
+    } finally {
+      api.close();
+      this.timetableClient = undefined;
+    }
+  }
+
+  private async writeTimetable(root: string, data: Timetable): Promise<void> {
+    await this.writeFields(root, {
+      status: data.status,
+      statusText: data.statusText,
+      configured: data.configured,
+      timezone: data.timezone,
+      evaluatedAt: data.evaluatedAt,
+      statusDate: data.statusDate,
+      date: data.date,
+      basis: data.basis,
+      dailySchedule: JSON.stringify(data.dailySchedule),
+      weeklySchedule: JSON.stringify(data.weeklySchedule),
+      json: JSON.stringify(data),
+    });
+    for (const [key, label] of [
+      ["currentLesson", "Aktuelle Stunde"],
+      ["nextLesson", "Nächste Stunde"],
+    ] as const) {
+      await this.ensureFolder(`${root}.${key}`, label);
+      const lesson = data[key];
+      await this.writeFields(`${root}.${key}`, {
+        subject: lesson?.subject ?? "",
+        start: lesson?.start ?? "",
+        end: lesson?.end ?? "",
+        room: lesson?.room ?? "",
+        teacher: lesson?.teacher ?? "",
+      });
+    }
+    await this.writeFields(root, {
+      lastSuccessfulUpdate: DateTime.now().toISO(),
+      lastError: "",
+      available: true,
+    });
+  }
+
   private scheduleApi(): void {
     if (this.stopped) {
       return;
@@ -287,6 +469,15 @@ export class FamilienPlan extends utils.Adapter {
     }
   }
   private async sync(): Promise<void> {
+    if (this.stopped) {
+      return;
+    }
+    if (this.timetablePoll) {
+      await this.timetablePoll;
+      if (this.stopped) {
+        return;
+      }
+    }
     if (this.syncing) {
       this.log.debug("Synchronisierung läuft bereits.");
       return;
@@ -729,11 +920,13 @@ export class FamilienPlan extends utils.Adapter {
           const locationJson = {
             responsibleName: loc.responsible_name ?? "",
             nextChangeAt,
+            daysLeft: this.daysLeft(nextChangeAt, now),
             lastUpdated: now.toISO()!,
           };
           await this.writeFields(lr, {
             responsibleName: loc.responsible_name ?? "",
             nextChangeAt,
+            daysLeft: this.daysLeft(nextChangeAt, now),
             lastUpdated: now.toISO()!,
             json: JSON.stringify(locationJson),
           });
@@ -840,6 +1033,7 @@ export class FamilienPlan extends utils.Adapter {
       const current = {
         responsibleName: this.responsibleName(active),
         nextChangeAt,
+        daysLeft: this.daysLeft(nextChangeAt, now),
         lastUpdated: now.toISO()!,
       };
       await this.writeFields(lr, { ...current, json: JSON.stringify(current) });
@@ -915,12 +1109,19 @@ export class FamilienPlan extends utils.Adapter {
         activeCount: active.length,
         lastUpdated: now.toISO()!,
       });
-      await this.writeOccurrence(`${root}.next`, "Nächster Termin", next, now);
+      await this.writeOccurrence(
+        `${root}.next`,
+        "Nächster Termin",
+        next,
+        now,
+        root !== "events.appointment.waste",
+      );
       await this.writeOccurrence(
         `${root}.nextAfter`,
         "Darauffolgender Termin",
         nextAfter,
         now,
+        root !== "events.appointment.waste",
       );
       for (let month = 1; month <= 12; month++) {
         const monthRoot = `${root}.month.${String(month).padStart(2, "0")}`;
@@ -952,6 +1153,7 @@ export class FamilienPlan extends utils.Adapter {
     const data = {
       responsibleName: location?.responsible_name ?? "",
       effectiveAt: location ? effectiveAt : "",
+      daysLeft: this.daysLeft(location ? effectiveAt : "", now),
       nextChangeAt: location
         ? nextLocationChange(location, DateTime.fromISO(effectiveAt))
         : "",
@@ -987,9 +1189,7 @@ export class FamilienPlan extends utils.Adapter {
       start: event?.starts_at ?? "",
       end: event?.ends_at ?? "",
       date: start?.toFormat(this.cfg.dateFormat) ?? "",
-      daysLeft: start
-        ? Math.floor(start.startOf("day").diff(now.startOf("day"), "days").days)
-        : 0,
+      daysLeft: this.daysLeft(event?.starts_at ?? "", now),
       allDay: Boolean(event?.all_day),
       description: event ? (completeEvent(event).description ?? "") : "",
       note: event ? (completeEvent(event).description ?? "") : "",
@@ -1002,6 +1202,17 @@ export class FamilienPlan extends utils.Adapter {
       data.responsibleName = this.responsibleName(event);
     }
     await this.writeFields(root, data);
+  }
+
+  private daysLeft(value: string, now: DateTime): number {
+    const date = DateTime.fromISO(value).setZone(this.cfg.timezone);
+    return date.isValid
+      ? Math.floor(
+          date
+            .startOf("day")
+            .diff(now.setZone(this.cfg.timezone).startOf("day"), "days").days,
+        )
+      : 0;
   }
 
   private monthName(month: number): string {
@@ -1573,7 +1784,7 @@ export class FamilienPlan extends utils.Adapter {
       const initialStates: Array<
         [string, StateType, string, string | number | boolean]
       > = [
-        ["enabled", "boolean", "indicator", false],
+        ["enabled", "boolean", "sensor.switch", false],
         ["event", "string", "json", "{}"],
         ["lastEventId", "string", "text", ""],
         ["scheduledFor", "string", "date", ""],
@@ -1936,12 +2147,21 @@ export class FamilienPlan extends utils.Adapter {
     role: string,
     write = false,
     def?: string | number | boolean,
+    unit?: string,
   ): Promise<void> {
     const defaultValue =
       def ?? (type === "number" ? 0 : type === "boolean" ? false : "");
     await this.extendObjectAsync(id, {
       type: "state",
-      common: { name, type, role, read: true, write, def: defaultValue },
+      common: {
+        name,
+        type,
+        role,
+        read: role !== "button",
+        write,
+        def: defaultValue,
+        ...(unit ? { unit } : {}),
+      },
       native: {},
     });
   }
@@ -1950,7 +2170,9 @@ export class FamilienPlan extends utils.Adapter {
     data: Record<string, string | number | boolean | null>,
   ): Promise<void> {
     for (const [key, value] of Object.entries(data)) {
-      const localizedValue = this.localizeDateState(key, value);
+      const localizedValue = root.includes(".timetable")
+        ? value
+        : this.localizeDateState(key, value);
       const id = `${root}.${key}`;
       if (this.writtenStates.get(id) === localizedValue) {
         continue;
@@ -1966,14 +2188,32 @@ export class FamilienPlan extends utils.Adapter {
         key === "event" ||
         key === "next" ||
         key === "eventIds" ||
+        key === "dailySchedule" ||
+        key === "weeklySchedule" ||
         key.endsWith("Json")
           ? "json"
-          : key === "count" || key.endsWith("Count") || key === "revision"
+          : type === "number"
             ? "value"
-            : key === "active" || key === "allDay"
-              ? "indicator"
-              : "text";
-      await this.ensureState(id, this.stateName(key), type, role);
+            : key === "evaluatedAt" || key === "lastSuccessfulUpdate"
+              ? "date"
+              : key === "active" ||
+                  key === "acknowledged" ||
+                  key === "available"
+                ? "sensor"
+                : key === "enabled"
+                  ? "sensor.switch"
+                  : type === "boolean"
+                    ? "state"
+                    : "text";
+      await this.ensureState(
+        id,
+        this.stateName(key),
+        type,
+        role,
+        false,
+        undefined,
+        key === "daysLeft" || key === "daysUntil" ? "d" : undefined,
+      );
       await this.writeStateIfChanged(id, localizedValue);
     }
   }
@@ -2042,6 +2282,21 @@ export class FamilienPlan extends utils.Adapter {
   }
   private stateName(key: string): string {
     const names: Record<string, string> = {
+      status: "Status",
+      statusText: "Statusbeschreibung",
+      configured: "Stundenplan hinterlegt",
+      timezone: "Zeitzone",
+      evaluatedAt: "Vom Server ausgewertet am",
+      statusDate: "Datum der Statusauswertung",
+      basis: "Datengrundlage",
+      dailySchedule: "Tagesplan als JSON",
+      weeklySchedule: "Wochenplan als JSON",
+      subject: "Fach",
+      room: "Raum",
+      teacher: "Lehrkraft",
+      available: "Aktuelle Daten verfügbar",
+      lastSuccessfulUpdate: "Letzte erfolgreiche Aktualisierung",
+      lastError: "Letzter Fehler",
       id: "ID",
       name: "Name",
       title: "Titel",

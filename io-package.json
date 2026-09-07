@@ -97,11 +97,29 @@
     },
     "titleLang": {
       "en": "FamilienPlan",
-      "de": "FamilienPlan"
+      "de": "FamilienPlan",
+      "ru": "FamilienPlan",
+      "pt": "FamilienPlan",
+      "nl": "FamilienPlan",
+      "fr": "FamilienPlan",
+      "it": "FamilienPlan",
+      "es": "FamilienPlan",
+      "pl": "FamilienPlan",
+      "uk": "FamilienPlan",
+      "zh-cn": "FamilienPlan"
     },
     "desc": {
       "en": "Imports FamilienPlan calendars and provides reliable automation triggers.",
-      "de": "Importiert FamilienPlan-Kalender und stellt zuverlässige Automatisierungstrigger bereit."
+      "de": "Importiert FamilienPlan-Kalender und stellt zuverlässige Automatisierungstrigger bereit.",
+      "ru": "Импортирует календари FamilienPlan и предоставляет надежные триггеры автоматизации.",
+      "pt": "Importa calendários FamilienPlan e fornece gatilhos de automação confiáveis.",
+      "nl": "Importeert FamilienPlan-agenda’s en biedt betrouwbare automatiseringstriggers.",
+      "fr": "Importe les calendriers FamilienPlan et fournit des déclencheurs d’automatisation fiables.",
+      "it": "Importa i calendari FamilienPlan e fornisce trigger di automazione affidabili.",
+      "es": "Importa calendarios FamilienPlan y proporciona activadores de automatización fiables.",
+      "pl": "Importuje kalendarze FamilienPlan i zapewnia niezawodne wyzwalacze automatyzacji.",
+      "uk": "Імпортує календарі FamilienPlan та надає надійні тригери автоматизації.",
+      "zh-cn": "导入 FamilienPlan 日历并提供可靠的自动化触发器。"
     },
     "authors": [
       "Ben Schmidt <github@ben-schmidt.net>"
@@ -138,7 +156,16 @@
       "singleton": false,
       "name": {
         "en": "FamilienPlan",
-        "de": "FamilienPlan"
+        "de": "FamilienPlan",
+        "ru": "FamilienPlan",
+        "pt": "FamilienPlan",
+        "nl": "FamilienPlan",
+        "fr": "FamilienPlan",
+        "it": "FamilienPlan",
+        "es": "FamilienPlan",
+        "pl": "FamilienPlan",
+        "uk": "FamilienPlan",
+        "zh-cn": "FamilienPlan"
       },
       "link": ""
     },
@@ -151,7 +178,8 @@
       {
         "admin": ">=8.0.11"
       }
-    ]
+    ],
+    "noGit": true
   },
   "native": {
     "baseUrl": "",
@@ -163,6 +191,8 @@
     "futureDays": 31,
     "rangePeriod": "year",
     "pollInterval": 15,
+    "timetableEnabled": false,
+    "timetableInterval": 60,
     "retryCount": 3,
     "retryBackoff": 1000,
     "childIds": "",
@@ -302,7 +332,7 @@
           "de": "API-Version"
         },
         "type": "string",
-        "role": "info.version",
+        "role": "text",
         "read": true,
         "write": false,
         "def": ""
@@ -391,7 +421,7 @@
         },
         "type": "boolean",
         "role": "button",
-        "read": true,
+        "read": false,
         "write": true,
         "def": false
       },

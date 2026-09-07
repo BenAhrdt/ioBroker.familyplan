@@ -1,3 +1,4 @@
+import { parseTimetable, type Timetable } from "./timetable";
 import { Agent, fetch as undiciFetch } from "undici";
 import type {
   Child,
@@ -45,6 +46,8 @@ type FetchLike = (input: string | URL, init?: RequestInit) => Promise<Response>;
  */
 export class FamilienPlanApiClient {
   private readonly fetchImpl: FetchLike;
+  private readonly controllers = new Set<AbortController>();
+  private closed = false;
   constructor(private readonly options: ApiClientOptions) {
     this.fetchImpl = options.fetchImpl ?? (undiciFetch as unknown as FetchLike);
   }
@@ -75,18 +78,42 @@ export class FamilienPlanApiClient {
       ),
     );
   }
+  async timetable(childId: number): Promise<Timetable> {
+    const data = parseTimetable(
+      await this.request(`children/${encodeURIComponent(childId)}/timetable`),
+    );
+    if (data.childId !== childId) {
+      throw new ApiError("Stundenplan-Antwort gehört zu einem anderen Kind.");
+    }
+    return data;
+  }
+  close(): void {
+    this.closed = true;
+    for (const controller of this.controllers) {
+      controller.abort();
+    }
+  }
   private async request(path: string): Promise<unknown> {
+    if (this.closed) {
+      throw new ApiError("API-Client wurde beendet.");
+    }
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.options.timeoutMs);
+    this.controllers.add(controller);
+    const signal = AbortSignal.any([
+      controller.signal,
+      AbortSignal.timeout(this.options.timeoutMs),
+    ]);
     let dispatcher: Agent | undefined;
     try {
-      const base = this.options.baseUrl.replace(/\/+$/, "");
+      const base = this.options.baseUrl
+        .replace(/\/+$/, "")
+        .replace(/\/api\/v1(?:\/integrations(?:\/v1)?)?$/, "");
       const init: FetchInit = {
         headers: {
           Authorization: `Bearer ${this.options.apiKey}`,
           Accept: "application/json",
         },
-        signal: controller.signal,
+        signal,
       };
       if (!this.options.verifySsl) {
         dispatcher = new Agent({
@@ -110,7 +137,10 @@ export class FamilienPlanApiClient {
       if (error instanceof ApiError) {
         throw error;
       }
-      if (error instanceof Error && error.name === "AbortError") {
+      if (
+        error instanceof Error &&
+        (error.name === "AbortError" || error.name === "TimeoutError")
+      ) {
         throw new ApiError(
           "Zeitüberschreitung beim API-Aufruf.",
           undefined,
@@ -123,7 +153,7 @@ export class FamilienPlanApiClient {
         true,
       );
     } finally {
-      clearTimeout(timer);
+      this.controllers.delete(controller);
       await dispatcher?.close();
     }
   }
