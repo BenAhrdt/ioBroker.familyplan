@@ -2,6 +2,13 @@
 
 There are no older releases yet. Current release notes are maintained in the
 [README changelog](README.md#changelog).
+## 0.1.10 (2026-09-05)
+
+- (BenAhrdt) Add configurable waste reminders with combined collection messages, persistent acknowledgement, and automatic expiry.
+- (BenAhrdt) Sort birthday summaries by the next anniversary without negative day counts and add combined messages and nearest-day person arrays.
+- (BenAhrdt) Display child birth dates and current ages and replace the default responsible user ID with the resolved name in child JSON.
+- (BenAhrdt) Support FamilienPlan 0.1.99 child and person birthdays, string IDs, annual occurrences, and leap-day handling while retaining compatibility with older responses.
+
 ## 0.1.9 (2026-09-05)
 
 - (BenAhrdt) Redesign configuration pages with grouped sections and expandable trigger rules.

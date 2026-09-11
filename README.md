@@ -228,7 +228,7 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
-### **WORK IN PROGRESS**
+### 0.1.15 (2026-09-11)
 
 - (BenAhrdt) Include compiled adapter files in the repository for ioBroker adapter checker compatibility.
 - (BenAhrdt) Complete Admin UI translations and validation messages for all supported languages.
@@ -254,13 +254,6 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
 
 - (BenAhrdt) Support FamilienPlan 0.1.100 birthday names and birth dates, prefer full names, and preserve original titles and all source fields.
 - (BenAhrdt) Keep missing birthday dates and ages unknown without inferring birth years; use server-provided annual occurrences and leap-day dates for birthday summaries.
-
-### 0.1.10 (2026-09-05)
-
-- (BenAhrdt) Add configurable waste reminders with combined collection messages, persistent acknowledgement, and automatic expiry.
-- (BenAhrdt) Sort birthday summaries by the next anniversary without negative day counts and add combined messages and nearest-day person arrays.
-- (BenAhrdt) Display child birth dates and current ages and replace the default responsible user ID with the resolved name in child JSON.
-- (BenAhrdt) Support FamilienPlan 0.1.99 child and person birthdays, string IDs, annual occurrences, and leap-day handling while retaining compatibility with older responses.
 
 Older changes are available in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 

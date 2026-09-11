@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "familyplan",
-    "version": "0.1.14",
+    "version": "0.1.15",
     "news": {
+      "0.1.15": {
+        "en": "Include compiled adapter files in the repository for ioBroker adapter checker compatibility.\nComplete Admin UI translations and validation messages for all supported languages.",
+        "de": "Fügen Sie kompilierte Adapterdateien zur Kompatibilität mit ioBroker in das Repository ein.\nVollständige Admin-UI-Übersetzungen und Prüfmeldungen für alle unterstützten Sprachen.",
+        "ru": "Включите скомпилированные файлы адаптеров в репозиторий для совместимости с программой проверки адаптеров IOBroker.\nПолные переводы пользовательского интерфейса администратора и проверочные сообщения для всех поддерживаемых языков.",
+        "pt": "Inclua arquivos compilados no repositório para compatibilidade com o IOBroker Adapter Checker.\nConclua traduções e mensagens de validação da Admin UI em todos os idiomas aceitos.",
+        "nl": "Voeg gecompileerde adapterbestanden toe aan de repository voor compatibiliteit met de IOBroker Adapter Checker.\nVolledige vertalingen en validatieberichten van de beheerdersinterface voor alle ondersteunde talen.",
+        "fr": "Incluez les fichiers d'adaptateur compilés dans le dépôt pour garantir la compatibilité avec IOBroker.\nTraductions complètes et messages de validation de l'interface dans toutes les langues.",
+        "it": "Includa i file compilati nell'archivio per la compatibilità con IOBroker Adapter Checker.\nTraduzioni complete dell'Admin UI e messaggi di convalida per tutte le lingue supportate.",
+        "es": "Incluya los archivos de adaptador compilados en el repositorio para comprobar la compatibilidad de IOBroker.\nMensajes completos de traducción y validación de la UI de administrador para todos los idiomas",
+        "pl": "Uwzględnij skompilowane pliki adapterów do repozytorium w celu zapewnienia zgodności modułu sprawdzania adaptera ioBroker.\nKompletne tłumaczenia interfejsu administratora i komunikaty walidacyjne dla wszystkich obsługiwanych języków.",
+        "uk": "Включіть компільовані файли адаптера до сховища для сумісності перевірки адаптерів IObroker.\nПовні переклади інтерфейсу адміністратора та повідомлення перевірки для всіх підтримуваних мов.",
+        "zh-cn": "在存储库中包含已编译的适配器文件，以兼容 IOBroker 适配器检查器。\n完成所有支持语言的管理员界面翻译和验证消息。"
+      },
       "0.1.14": {
         "en": "Exclude events ending exactly at the start of today from the admin tab's \"From today\" filter.\nRemove the unsupported `common.noGit` property from `io-package.json`.",
         "de": "Schließen Sie im Admin-Tab „Ab heute“ -Filter Events aus, die genau am Tag enden.\nLöscht die ununterstützte Eigenschaft `common.noGit“ aus `io-package.json`.",
@@ -80,19 +93,6 @@
         "pl": "Przeprojektuj strony konfiguracyjne z pogrupowanymi sekcjami i rozszerzalnymi regułami wyzwalania.\nDodaj dokładne/zawiera filtry tytułu i opisu, wybierane jednostki długości wyzwalacza i osobne okno nadrabiania.\nObsługa nieograniczonych długości wyzwalaczy z trwałym stanem aktywnym i przyciskiem ręcznego resetowania na regułę.",
         "uk": "Переробляйте сторінки конфігурації за допомогою згрупованих розділів та розширюваних правил запуску.\nДодайте точні/містить фільтри заголовка та опису, вибрані одиниці довжини тригера та окреме вікно наздоганяння.\nПідтримка необмеженої довжини тригерів із постійним активним станом та кнопкою ручного скидання для кожного правила.",
         "zh-cn": "使用分组部分和可扩展触发规则重新设计配置页面。\n添加精确/包含标题和描述过滤器、可选的触发长度单位以及单独的追赶窗口。\n支持无限的触发长度，具有持续的活动状态，每条规则都有一个手动重置按钮。"
-      },
-      "0.1.8": {
-        "en": "Adapt event descriptions to FamilienPlan 0.1.95, preserve API titles and complete event JSON, and clear removed notes.\nCorrect appointment counts and refresh removed or reappearing event groups.\nDetermine custody changes by responsible user IDs and consider the end of the current stay.\nRespect child-read permissions and report unavailable child ages as unknown without inferring birthday associations from names.",
-        "de": "Eventbeschreibungen an FamilienPlan 0.1.95 anpassen, API-Titel beibehalten, JSON-Daten löschen.\nTermine korrigieren und gelöschte oder neue Eventgruppen auffrischen.\nBestimme das Sorgerecht anhand der Nutzernamen und überlege dir das Ende des Aufenthalts.\nLesen Sie Kinder und melden Sie Alter nicht verfügbarer Kinder als unbekannt, ohne aus Namen einen Bezug zum Geburtstag zu ziehen.",
-        "ru": "Адаптируйте описания событий к FamilienPlan 0.1.95, сохраните заголовки API и полный JSON событий, а также удалите удаленные заметки.\nИсправьте количество встреч и обновите удаленные или вновь появившиеся группы событий.\nОпределите изменения в опеке по идентификаторам ответственных пользователей и подумайте об окончании текущего срока пребывания.\nСоблюдайте разрешения на чтение детьми и сообщайте о недоступном возрасте детей как о неизвестном возрасте, не вызывая ассоциаций с днем рождения по именам.",
-        "pt": "Adapte as descrições do evento ao FamilienPlan 0.1.95, preserve os títulos da API, complete o JSON e limpe as notas.\nCorrija o número de consultas e atualize grupos removidos ou retornados.\nDetermine as mudanças de custódia por IDs de usuário e considere o fim da estadia.\nRespeite as permissões de leitura infantil e informe a idade indisponível sem deduzir associações de aniversários.",
-        "nl": "Pas de beschrijvingen van gebeurtenissen aan FamilienPlan 0.1.95 aan, bewaar de API-titels en voltooi de JSON van de gebeurtenis, en verwijder verwijderde notities.\nCorrigeer het aantal afspraken en vernieuw verwijderde of opnieuw verschijnende evenementengroepen.\nBepaal de wijzigingen in de voogdij aan de hand van de identificatiebewijzen van de verantwoordelijke gebruiker en houd rekening met het einde van het huidige verblijf.\nRespecteer de leesmachtigingen voor kinderen en meld de leeftijd van niet-beschikbare kinderen als onbekend zonder de geboortedatum af te leiden uit de namen.",
-        "fr": "Adaptez les descriptions à FamilienPlan 0.1.95, conservez les titres des API, complétez le JSON et effacez les notes.\nCorrigez le nombre de rendez-vous et actualisez les groupes supprimés ou réapparus.\nDéterminez les changements de garde à l'aide d'identifiants responsables et pensez à la fin du séjour.\nRespectez les autorisations de lecture des enfants et signalez l'âge indisponible des enfants comme inconnu, sans déduire les noms d'anniversaire.",
-        "it": "Adatta le descrizioni degli eventi a FamilienPlan 0.1.95, conserva titoli API e JSON e cancella le note rimosse.\nCorreggi gli appuntamenti e aggiorna i gruppi di eventi rimossi o riapparsi.\nModifichi la custodia con ID utente responsabili e consideri la fine del soggiorno.\nRispetti i permessi di lettura per bambini e segnala l'età non disponibile senza dedurre le date di nascita dai nomi.",
-        "es": "Adapte las descripciones de los eventos a FamilienPlan 0.1.95, conserve los títulos de la API y complete el JSON y borre las notas eliminadas\nCorrija el recuento de citas y actualice los grupos de eventos\nDetermine los cambios de custodia por usuario responsable y piense en el final de la estancia actual.\nRespete los permisos de lectura de los niños y denuncie las edades no disponibles sin deducir las asociaciones de cumpleaños de los nombres.",
-        "pl": "Dostosuj opisy zdarzeń do planu FamilienPlan 0.1.95, zachowaj tytuły API i uzupełnij JSON zdarzeń oraz wyczyść usunięte notatki.\nPopraw liczbę spotkań i odśwież usunięte lub ponownie pojawiające się grupy zdarzeń.\nOkreśl zmiany opieki według identyfikatorów odpowiedzialnych użytkowników i rozważ koniec bieżącego pobytu.\nPrzestrzegaj uprawnień do czytania przez dzieci i zgłaszaj niedostępny wiek dzieci jako nieznany bez wywnioskowania powiązań urodzinowych z nazw.",
-        "uk": "Адаптуйте описи подій до FamilienPlan 0.1.95, збережіть заголовки API та повний JSON подій та очистіть видалені нотатки.\nВиправте кількість зустрічей та оновіть видалені або знову з'являлися групи подій.\nВизначте зміни опіки за відповідальними ідентифікаторами користувача та враховуйте закінчення поточного перебування.\nПоважайте дозволи для читання дітей та повідомляйте про недоступний вік дитини як невідомий, не виводячи асоціації з імен.",
-        "zh-cn": "将事件描述调整为 FamilienPlan 0.1.95，保留 API 标题和完整的事件 JSON，并清除已删除的注释。\n更正预约次数并刷新已删除或重新出现的活动群组。\n根据负责任的用户 ID 确定监护权变更，并考虑当前居留期的终止。\n尊重孩子的读取权限，将不可用的孩子的年龄报告为未知，而无需从姓名推断出生日关联。"
       }
     },
     "titleLang": {
