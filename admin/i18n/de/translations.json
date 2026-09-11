@@ -122,5 +122,12 @@
   "Timetable": "Stundenplan",
   "Requires the timetable extension on the FamilienPlan server and read:children. Shows planned lessons, not substitutions. Holidays only apply when stored as days off in the plan.": "Benötigt die Stundenplan-Erweiterung auf dem FamilienPlan-Server und read:children. Zeigt planmäßigen Unterricht, keine Vertretungen. Ferien und Feiertage gelten nur, wenn sie im Plan als freie Tage hinterlegt sind.",
   "Fetch timetables": "Stundenplan abrufen",
-  "Polling interval (seconds)": "Abrufintervall (Sekunden)"
+  "Polling interval (seconds)": "Abrufintervall (Sekunden)",
+  "Trigger": "Trigger",
+  "Timeline": "Timeline",
+  "Bitte eine gültige HTTP- oder HTTPS-URL eingeben.": "Bitte eine gültige HTTP- oder HTTPS-URL eingeben.",
+  "Bitte eine ganze Zahl ab 0 eingeben.": "Bitte eine ganze Zahl ab 0 eingeben.",
+  "Bitte eine Uhrzeit im Format HH:mm eingeben.": "Bitte eine Uhrzeit im Format HH:mm eingeben.",
+  "Bitte einen eindeutigen Namen eingeben.": "Bitte einen eindeutigen Namen eingeben.",
+  "Leer lassen oder eine positive ganze Zahl eingeben.": "Leer lassen oder eine positive ganze Zahl eingeben."
 }

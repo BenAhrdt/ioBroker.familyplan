@@ -198,7 +198,7 @@ Use an “Object changed” block for `familyplan.0.triggers.<rule-id>.count` wi
 
 The API key is encrypted through `encryptedNative`, protected through `protectedNative`, and redacted together with authorization headers in error messages. Invalid individual events are skipped without rejecting an otherwise valid response. Never publish diagnostics or configuration exports containing a real key.
 
-The adapter is distributed as a compiled npm package. `npm pack` builds the adapter before packaging. Admin configuration translations include German and English; other supported languages currently use English fallback texts.
+The adapter is distributed as a compiled npm package. `npm pack` builds the adapter before packaging. Admin configuration help and validation messages are translated into all supported languages; some short labels still use English fallback texts.
 
 ## Development
 
@@ -210,6 +210,8 @@ npm run validate
 ```
 
 `npm run validate` performs TypeScript checking, ESLint, unit and package tests, and a clean build. HTTP tests use mocks and do not require a FamilienPlan server.
+
+Include the generated `build/` files when committing source changes so the repository contains the `build/main.js` entry point required by the adapter checker. The release script also rebuilds these files before its release commit.
 
 Start the local ioBroker development environment with:
 
@@ -226,6 +228,11 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+
+- (BenAhrdt) Include compiled adapter files in the repository for ioBroker adapter checker compatibility.
+- (BenAhrdt) Complete Admin UI translations and validation messages for all supported languages.
+
 ### 0.1.14 (2026-09-11)
 
 - (BenAhrdt) Exclude events ending exactly at the start of today from the admin tab's "From today" filter.

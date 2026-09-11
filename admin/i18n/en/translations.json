@@ -122,5 +122,12 @@
   "Timetable": "Timetable",
   "Requires the timetable extension on the FamilienPlan server and read:children. Shows planned lessons, not substitutions. Holidays only apply when stored as days off in the plan.": "Requires the timetable extension on the FamilienPlan server and read:children. Shows planned lessons, not substitutions. Holidays only apply when stored as days off in the plan.",
   "Fetch timetables": "Fetch timetables",
-  "Polling interval (seconds)": "Polling interval (seconds)"
+  "Polling interval (seconds)": "Polling interval (seconds)",
+  "Trigger": "Trigger",
+  "Timeline": "Timeline",
+  "Bitte eine gültige HTTP- oder HTTPS-URL eingeben.": "Please enter a valid HTTP or HTTPS URL.",
+  "Bitte eine ganze Zahl ab 0 eingeben.": "Please enter an integer greater than or equal to 0.",
+  "Bitte eine Uhrzeit im Format HH:mm eingeben.": "Please enter a time in HH:mm format.",
+  "Bitte einen eindeutigen Namen eingeben.": "Please enter a unique name.",
+  "Leer lassen oder eine positive ganze Zahl eingeben.": "Leave blank or enter a positive integer."
 }
