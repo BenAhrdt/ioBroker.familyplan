@@ -198,7 +198,7 @@ Use an “Object changed” block for `familyplan.0.triggers.<rule-id>.count` wi
 
 The API key is encrypted through `encryptedNative`, protected through `protectedNative`, and redacted together with authorization headers in error messages. Invalid individual events are skipped without rejecting an otherwise valid response. Never publish diagnostics or configuration exports containing a real key.
 
-The adapter is distributed as a compiled npm package; direct installation from the Git source is disabled (`common.noGit`). `npm pack` builds the adapter before packaging. Admin configuration translations include German and English; other supported languages currently use English fallback texts.
+The adapter is distributed as a compiled npm package. `npm pack` builds the adapter before packaging. Admin configuration translations include German and English; other supported languages currently use English fallback texts.
 
 ## Development
 
@@ -226,6 +226,11 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+
+- (BenAhrdt) Exclude events ending exactly at the start of today from the admin tab's "From today" filter.
+- (BenAhrdt) Remove the unsupported `common.noGit` property from `io-package.json`.
+
 ### 0.1.13 (2026-09-07)
 
 - (BenAhrdt) change color og class shedule hours in tab
