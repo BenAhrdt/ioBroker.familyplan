@@ -226,7 +226,7 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
-### **WORK IN PROGRESS**
+### 0.1.14 (2026-09-11)
 
 - (BenAhrdt) Exclude events ending exactly at the start of today from the admin tab's "From today" filter.
 - (BenAhrdt) Remove the unsupported `common.noGit` property from `io-package.json`.
@@ -254,12 +254,6 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
 - (BenAhrdt) Sort birthday summaries by the next anniversary without negative day counts and add combined messages and nearest-day person arrays.
 - (BenAhrdt) Display child birth dates and current ages and replace the default responsible user ID with the resolved name in child JSON.
 - (BenAhrdt) Support FamilienPlan 0.1.99 child and person birthdays, string IDs, annual occurrences, and leap-day handling while retaining compatibility with older responses.
-
-### 0.1.9 (2026-09-05)
-
-- (BenAhrdt) Redesign configuration pages with grouped sections and expandable trigger rules.
-- (BenAhrdt) Add exact/contains title and description filters, selectable trigger-length units, and a separate catch-up window.
-- (BenAhrdt) Support unlimited trigger lengths with persistent active state and a manual reset button per rule.
 
 Older changes are available in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 

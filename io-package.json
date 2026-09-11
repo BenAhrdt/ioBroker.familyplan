@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "familyplan",
-    "version": "0.1.13",
+    "version": "0.1.14",
     "news": {
+      "0.1.14": {
+        "en": "Exclude events ending exactly at the start of today from the admin tab's \"From today\" filter.\nRemove the unsupported `common.noGit` property from `io-package.json`.",
+        "de": "Schließen Sie im Admin-Tab „Ab heute“ -Filter Events aus, die genau am Tag enden.\nLöscht die ununterstützte Eigenschaft `common.noGit“ aus `io-package.json`.",
+        "ru": "Исключите события, закончившиеся ровно в начале сегодняшнего дня, из фильтра «С сегодняшнего дня» на вкладке администратора.\nУдалите неподдерживаемое свойство `Common.nogit` из `io-package.json`.",
+        "pt": "Exclua eventos que terminam no início de hoje do filtro “De hoje” da guia admin.\nRemova a propriedade incompatível `common.noGit` de `io-package.json`.",
+        "nl": "Sluit gebeurtenissen die precies aan het begin van vandaag eindigen uit het filter „Vanaf vandaag” op het tabblad „Vanaf vandaag” voor beheerders.\nVerwijder de niet-ondersteunde eigenschap `Common.NogIt` uit `io-package.json`.",
+        "fr": "Excluez les événements qui se terminent exactement au début de la journée du filtre « À partir d'aujourd'hui ».\nSupprimez la propriété « common.nogit » non prise en charge de « io-package.json ».",
+        "it": "Escluda gli eventi che terminano oggi dal filtro «Da oggi» della scheda admin.\nRimuovi la proprietà non supportata da «io-package.json».",
+        "es": "Excluya los eventos que terminen exactamente a principios de hoy del filtro «A partir de hoy» de la pestaña Admin.\nElimine la propiedad `Common.noGit` no compatible de `io-package.json`.",
+        "pl": "Wyklucz zdarzenia kończące się dokładnie na początku dnia dzisiejszego z filtra „Od dzisiaj” zakładki administratora.\nUsuń nieobsługiwaną właściwość `common.nogit` z `io-package.json`.",
+        "uk": "Виключіть події, що закінчуються точно на початку сьогоднішнього дня, з фільтра «З сьогоднішнього дня» вкладки адміністратора.\nВидаліть непідтримувану властивість `common.Nogit` з `io-package.json`.",
+        "zh-cn": "从管理员选项卡的 “从今天开始” 筛选器中排除恰好在今天开始时结束的事件。\n从 `io-package.json` 中删除不支持的 common.nogit 属性。"
+      },
       "0.1.13": {
         "en": "change color og class shedule hours in tab",
         "de": "Farbe der Stundenpläne im Tab ändern",
@@ -80,19 +93,6 @@
         "pl": "Dostosuj opisy zdarzeń do planu FamilienPlan 0.1.95, zachowaj tytuły API i uzupełnij JSON zdarzeń oraz wyczyść usunięte notatki.\nPopraw liczbę spotkań i odśwież usunięte lub ponownie pojawiające się grupy zdarzeń.\nOkreśl zmiany opieki według identyfikatorów odpowiedzialnych użytkowników i rozważ koniec bieżącego pobytu.\nPrzestrzegaj uprawnień do czytania przez dzieci i zgłaszaj niedostępny wiek dzieci jako nieznany bez wywnioskowania powiązań urodzinowych z nazw.",
         "uk": "Адаптуйте описи подій до FamilienPlan 0.1.95, збережіть заголовки API та повний JSON подій та очистіть видалені нотатки.\nВиправте кількість зустрічей та оновіть видалені або знову з'являлися групи подій.\nВизначте зміни опіки за відповідальними ідентифікаторами користувача та враховуйте закінчення поточного перебування.\nПоважайте дозволи для читання дітей та повідомляйте про недоступний вік дитини як невідомий, не виводячи асоціації з імен.",
         "zh-cn": "将事件描述调整为 FamilienPlan 0.1.95，保留 API 标题和完整的事件 JSON，并清除已删除的注释。\n更正预约次数并刷新已删除或重新出现的活动群组。\n根据负责任的用户 ID 确定监护权变更，并考虑当前居留期的终止。\n尊重孩子的读取权限，将不可用的孩子的年龄报告为未知，而无需从姓名推断出生日关联。"
-      },
-      "0.1.7": {
-        "en": "Add an optional responsible-person filter for `STAY` trigger rules so consecutive custody intervals for the same child do not both match an arrival rule.",
-        "de": "Fügen Sie optional den Filter „AUFENTHALT“ hinzu, sodass mehrere Sorgerechtsintervalle für dasselbe Kind keiner Anreiseregel entsprechen.",
-        "ru": "Добавьте дополнительный фильтр ответственных лиц для триггерных правил «STAY», чтобы интервалы между последовательными опеками над одним и тем же ребенком не соответствовали правилу прибытия.",
-        "pt": "Adicione um filtro opcional de responsável às regras de “PERMANECER” para que a guarda consecutiva da mesma criança não corresponda à regra de chegada.",
-        "nl": "Voeg een optioneel filter voor de verantwoordelijke persoon toe voor de activeringsregels voor `STAY`, zodat opeenvolgende voogdijintervallen voor hetzelfde kind niet beide overeenkomen met een aankomstregel.",
-        "fr": "Ajoutez un filtre de responsable pour les règles de déclenchement « STAY » afin que la garde d'un même enfant ne corresponde pas à la règle d'arrivée.",
-        "it": "Aggiunga un filtro opzionale per le regole «STAY» in modo che l'affidamento consecutivo dello stesso bambino non sia valido.",
-        "es": "Añada un filtro opcional de persona responsable para las reglas de estancia para que los intervalos de custodia consecutivos del mismo niño no coincidan con la regla de llegada.",
-        "pl": "Dodaj opcjonalny filtr dla osób odpowiedzialnych dla reguł wyzwalania „STAY”, aby kolejne okresy opieki dla tego samego dziecka nie były zgodne z zasadą przyjazdu.",
-        "uk": "Додайте додатковий фільтр відповідальної особи для правил запуску `STAY`, щоб послідовні інтервали опіки однієї дитини не відповідали правилу прибуття.",
-        "zh-cn": "为 “STAY” 触发规则添加一个可选的责任人筛选条件，这样同一个孩子的连续监护间隔就不会都与到达规则相匹配。"
       }
     },
     "titleLang": {

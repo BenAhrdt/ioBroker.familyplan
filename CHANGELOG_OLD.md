@@ -2,6 +2,12 @@
 
 There are no older releases yet. Current release notes are maintained in the
 [README changelog](README.md#changelog).
+## 0.1.9 (2026-09-05)
+
+- (BenAhrdt) Redesign configuration pages with grouped sections and expandable trigger rules.
+- (BenAhrdt) Add exact/contains title and description filters, selectable trigger-length units, and a separate catch-up window.
+- (BenAhrdt) Support unlimited trigger lengths with persistent active state and a manual reset button per rule.
+
 ## 0.1.8 (2026-09-05)
 
 - (BenAhrdt) Adapt event descriptions to FamilienPlan 0.1.95, preserve API titles and complete event JSON, and clear removed notes.
