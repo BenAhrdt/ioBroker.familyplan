@@ -230,7 +230,7 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
-### **WORK IN PROGRESS**
+### 0.1.16 (2026-10-12)
 
 - (BenAhrdt) Wrap JSON states containing arrays in a leading object for Home Assistant compatibility, while continuing to read legacy array values during migration.
 - (BenAhrdt) Align `birthdays.next` and `birthdays.summary.nextJson` to calendar-day birthday ordering and expose `daysUntil` in the next-birthday JSON projection.
@@ -256,11 +256,6 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
 - (BenAhrdt) Use `sensor` for active and acknowledged states, `sensor.switch` for trigger activation status, and `state` for all-day flags; make reset and refresh buttons write-only.
 - (BenAhrdt) Add `daysLeft` to children's current, next, and following custody projections, counting calendar days in the configured time zone until the respective change.
 - (BenAhrdt) Remove unnecessary child states from waste previews, including the waste event group, and update existing state definitions automatically.
-
-### 0.1.11 (2026-09-05)
-
-- (BenAhrdt) Support FamilienPlan 0.1.100 birthday names and birth dates, prefer full names, and preserve original titles and all source fields.
-- (BenAhrdt) Keep missing birthday dates and ages unknown without inferring birth years; use server-provided annual occurrences and leap-day dates for birthday summaries.
 
 Older changes are available in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 

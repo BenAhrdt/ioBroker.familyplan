@@ -2,6 +2,11 @@
 
 There are no older releases yet. Current release notes are maintained in the
 [README changelog](README.md#changelog).
+## 0.1.11 (2026-09-05)
+
+- (BenAhrdt) Support FamilienPlan 0.1.100 birthday names and birth dates, prefer full names, and preserve original titles and all source fields.
+- (BenAhrdt) Keep missing birthday dates and ages unknown without inferring birth years; use server-provided annual occurrences and leap-day dates for birthday summaries.
+
 ## 0.1.10 (2026-09-05)
 
 - (BenAhrdt) Add configurable waste reminders with combined collection messages, persistent acknowledgement, and automatic expiry.
