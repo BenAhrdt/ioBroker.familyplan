@@ -93,7 +93,7 @@ Each existing child path gains a `children.<name>.timetable` folder with read-on
 | `basis` | `planned`: regular planned lessons, not live substitutions |
 | `currentLesson.subject/start/end/room/teacher` | Current lesson; all fields empty when the server returns null |
 | `nextLesson.subject/start/end/room/teacher` | Next lesson of the current day; all fields empty when null |
-| `dailySchedule`, `weeklySchedule` | JSON arrays of lessons |
+| `dailySchedule`, `weeklySchedule` | JSON objects containing the lesson arrays under the same-named key |
 | `json` | Complete validated API response, including the underlying `plan` |
 | `available` | Whether the latest fetch returned usable data |
 | `lastSuccessfulUpdate` | Timestamp of the most recent successful fetch |
@@ -130,6 +130,8 @@ familyplan.0
 ├── waste                Relative waste-collection groups
 └── triggers             Shared event, rule states, schedule, and persistent history
 ```
+
+JSON states whose top-level value is a collection use an object wrapper for integrations that require a JSON object. The collection is stored under a semantic key, for example `calendar.json` uses `{ "calendar": [...] }`, birthday summaries use `{ "birthdays": [...] }`, waste lists use `{ "waste": [...] }`, and `triggers.schedule` uses `{ "schedule": [...] }`. Single-record JSON states remain regular objects; legacy array values are still accepted when restoring cached calendar data and reminder state.
 
 FamilienPlan API 0.1.82 calendar objects use `event_type`; the former `type` property is deliberately ignored. Known types include `GENERAL`, `STAY`, `SCHOOL`, `SCHOOL_HOLIDAY`, `BIRTHDAY`, `PRIVATE`, `WASTE`, `CLEANING`, and `OTHER`. Additional API values are supported dynamically. `OTHER` is grouped further by its normalized `custom_type_label`; events without a label use `unknown`.
 
@@ -228,6 +230,11 @@ The Admin UI is available at `http://127.0.0.1:8081` by default. Local data is s
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+
+- (BenAhrdt) Wrap JSON states containing arrays in a leading object for Home Assistant compatibility, while continuing to read legacy array values during migration.
+- (BenAhrdt) Align `birthdays.next` and `birthdays.summary.nextJson` to calendar-day birthday ordering and expose `daysUntil` in the next-birthday JSON projection.
+
 ### 0.1.15 (2026-09-11)
 
 - (BenAhrdt) Include compiled adapter files in the repository for ioBroker adapter checker compatibility.

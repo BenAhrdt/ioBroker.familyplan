@@ -347,7 +347,7 @@
         "role": "json",
         "read": true,
         "write": false,
-        "def": "[]"
+        "def": "{\"scopes\":[]}"
       },
       "native": {}
     },
@@ -449,7 +449,7 @@
         "role": "json",
         "read": true,
         "write": false,
-        "def": "[]"
+        "def": "{\"calendar\":[]}"
       },
       "native": {}
     },

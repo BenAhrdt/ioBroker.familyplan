@@ -55,6 +55,12 @@ interface ProjectionAdapter {
   writeBirthdays(events: CalendarEvent[], now: DateTime): Promise<void>;
 }
 const now = DateTime.fromISO("2026-09-05T00:00:00+02:00");
+
+function parseCollection<T>(value: unknown, key: string): T[] {
+  const parsed = JSON.parse(String(value)) as Record<string, unknown>;
+  return parsed[key] as T[];
+}
+
 const stay: CalendarEvent = {
   event_type: "STAY",
   id: 42,
@@ -260,10 +266,14 @@ describe("FamilienPlan 0.1.95 API contract", () => {
     const events = uniqueOccurrences(parseEvents([first, stay, last]));
     expect(events).length(3);
     await adapter.writeEvents(events, now);
-    expect(JSON.parse(String(states.get("appointments.json")))).length(3);
+    expect(
+      parseCollection(states.get("appointments.json"), "appointments"),
+    ).length(3);
     expect(states.get("appointments.next.title")).eq(first.title);
     await adapter.writeEvents([stay], now);
-    expect(JSON.parse(String(states.get("appointments.json")))).deep.eq([
+    expect(
+      parseCollection(states.get("appointments.json"), "appointments"),
+    ).deep.eq([
       {
         ...stay,
         starts_at: "2026-09-05T08:00:00.000+02:00",
@@ -272,7 +282,7 @@ describe("FamilienPlan 0.1.95 API contract", () => {
       },
     ]);
     await adapter.writeEvents([], now);
-    expect(states.get("appointments.json")).eq("[]");
+    expect(states.get("appointments.json")).eq('{"appointments":[]}');
     expect(states.get("appointments.next.json")).eq("{}");
     expect(states.has("events.appointment.stay.json")).eq(false);
     await adapter.writeEvents([stay], now);
@@ -500,7 +510,7 @@ describe("Persistent waste reminder projection", () => {
     expect(states.get("waste.reminder.acknowledged")).eq(true);
     await restarted.updateWasteReminder(events, due.plus({ days: 2 }));
     expect(states.get("waste.reminder.active")).eq(false);
-    expect(states.get("waste.reminder.json")).eq("[]");
+    expect(states.get("waste.reminder.json")).eq('{"waste":[]}');
   });
   it("ignores premature resets and clears an unacknowledged expired reminder", async () => {
     const { adapter, states } = harness();
@@ -599,7 +609,10 @@ describe("Child and birthday display details", () => {
       },
     ];
     await adapter.writeBirthdays(events, now);
-    const json = JSON.parse(String(states.get("birthdays.summary.json")));
+    const json = parseCollection<{ daysUntil: number; age: number }>(
+      states.get("birthdays.summary.json"),
+      "birthdays",
+    );
     expect(json.map((item: { daysUntil: number }) => item.daysUntil)).deep.eq([
       0, 0, 364,
     ]);
@@ -607,14 +620,66 @@ describe("Child and birthday display details", () => {
     expect(states.get("birthdays.summary.text")).eq(
       "Heute werden Rebecca 39 und XY 40.",
     );
-    expect(JSON.parse(String(states.get("birthdays.summary.nextJson")))).length(
-      2,
-    );
+    expect(
+      parseCollection(states.get("birthdays.summary.nextJson"), "birthdays"),
+    ).length(2);
     expect(states.get("birthdays.summary.daysUntil")).eq(0);
     await adapter.writeBirthdays([], now);
-    expect(states.get("birthdays.summary.nextJson")).eq("[]");
+    expect(states.get("birthdays.summary.nextJson")).eq('{"birthdays":[]}');
     expect(states.get("birthdays.summary.daysUntil")).eq(null);
     expect(states.get("birthdays.summary.text")).eq("");
+  });
+  it("keeps next birthday projections aligned with the nearest summary day", async () => {
+    const { adapter, states } = harness();
+    adapter.config.birthdaysEnabled = true;
+    const events = [
+      {
+        ...stay,
+        child_id: undefined,
+        event_type: "BIRTHDAY",
+        id: 1,
+        title: "Stefan",
+        starts_at: "2026-09-05T00:00:00+02:00",
+        ends_at: "2026-09-06T00:00:00+02:00",
+        all_day: true,
+        age: 43,
+      },
+      {
+        ...stay,
+        child_id: undefined,
+        event_type: "BIRTHDAY",
+        id: 2,
+        title: "Anna",
+        starts_at: "2026-09-05T00:00:00+02:00",
+        ends_at: "2026-09-06T00:00:00+02:00",
+        all_day: true,
+        age: 40,
+      },
+      {
+        ...stay,
+        child_id: undefined,
+        event_type: "BIRTHDAY",
+        id: 3,
+        title: "Eva",
+        starts_at: "2026-09-06T00:00:00+02:00",
+        ends_at: "2026-09-07T00:00:00+02:00",
+        all_day: true,
+        age: 35,
+      },
+    ];
+    const current = DateTime.fromISO("2026-09-05T12:00:00+02:00");
+    await adapter.writeBirthdays(events, current);
+
+    const next = JSON.parse(String(states.get("birthdays.next.json")));
+    const nearest = parseCollection<{ id: number; daysUntil: number }>(
+      states.get("birthdays.summary.nextJson"),
+      "birthdays",
+    );
+    expect(next).include({ id: 2, name: "Anna", daysUntil: 0 });
+    expect(nearest.map((item) => item.id)).deep.eq([2, 1]);
+    expect(nearest.every((item) => item.daysUntil === next.daysUntil)).eq(true);
+    expect(states.get("birthdays.next.daysUntil")).eq(0);
+    expect(states.get("birthdays.summary.daysUntil")).eq(0);
   });
 });
 
@@ -675,7 +740,10 @@ describe("FamilienPlan 0.1.99 birthday sources", () => {
     expect(JSON.parse(String(states.get("birthdays.nextAfter.json"))).id).eq(
       "child:1",
     );
-    const monthly = JSON.parse(String(states.get("birthdays.month.09.json")));
+    const monthly = parseCollection<CalendarEvent>(
+      states.get("birthdays.month.09.json"),
+      "birthdays",
+    );
     expect(monthly).length(4);
     expect(monthly.map((item: CalendarEvent) => item.id)).deep.eq([
       1,
@@ -684,7 +752,10 @@ describe("FamilienPlan 0.1.99 birthday sources", () => {
       "child:1",
     ]);
     expect(monthly[2]).include({ user_id: 1, source: "person", all_day: true });
-    const summary = JSON.parse(String(states.get("birthdays.summary.json")));
+    const summary = parseCollection<{ daysUntil: number }>(
+      states.get("birthdays.summary.json"),
+      "birthdays",
+    );
     expect(summary).length(3);
     expect(
       summary.map((item: { daysUntil: number }) => item.daysUntil),
@@ -738,7 +809,10 @@ describe("FamilienPlan 0.1.99 birthday sources", () => {
     expect(states.get("birthdays.next.birthDate")).eq("29.02.2012");
     expect(states.get("birthdays.next.date")).eq("28.02.2026");
     expect(
-      JSON.parse(String(states.get("birthdays.month.02.json")))[0].birthDate,
+      parseCollection<{ birthDate: string }>(
+        states.get("birthdays.month.02.json"),
+        "birthdays",
+      )[0].birthDate,
     ).eq("29.02.2012");
     await adapter.writeChildrenFromEvents(
       adapter.childrenData,
@@ -761,7 +835,10 @@ describe("FamilienPlan 0.1.99 birthday sources", () => {
     expect(states.get("birthdays.next.age")).eq(null);
     expect(states.get("birthdays.next.birthDate")).eq("");
     expect(states.get("birthdays.next.text")).eq("Morgen hat Oma Geburtstag.");
-    const item = JSON.parse(String(states.get("birthdays.month.09.json")))[0];
+    const item = parseCollection<{ age: number | null; birthDate: string }>(
+      states.get("birthdays.month.09.json"),
+      "birthdays",
+    )[0];
     expect(item.age).eq(null);
     expect(item.birthDate).eq("");
   });
@@ -809,7 +886,10 @@ describe("FamilienPlan 0.1.100 birthday name projections", () => {
         expect(states.get(`birthdays.next.${key}`)).eq(raw[key]);
       }
       for (const root of ["birthdays.summary", "birthdays.month.09"]) {
-        const item = JSON.parse(String(states.get(`${root}.json`)))[0];
+        const item = parseCollection(
+          states.get(`${root}.json`),
+          "birthdays",
+        )[0];
         expect(item).include({
           name: "Tom Grywnow",
           title: "Tom",
@@ -939,7 +1019,7 @@ describe("Timetable integration", () => {
         }
       }
       for (const key of ["dailySchedule", "weeklySchedule"] as const) {
-        expect(JSON.parse(String(states.get(`${root}.${key}`)))).deep.eq(
+        expect(parseCollection(states.get(`${root}.${key}`), key)).deep.eq(
           data[key],
         );
         expect(objects.get(`${root}.${key}`)?.common?.role).eq("json");

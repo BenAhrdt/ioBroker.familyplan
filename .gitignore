@@ -3,3 +3,4 @@ coverage/
 *.tgz
 .dev-server/
 .commitinfo
+secondBrain/

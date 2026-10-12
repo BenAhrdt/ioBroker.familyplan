@@ -43,6 +43,19 @@ const triggers_1 = require("./lib/triggers");
 const validation_1 = require("./lib/validation");
 const waste_reminder_1 = require("./lib/waste-reminder");
 const birthdays_1 = require("./lib/birthdays");
+function jsonObject(key, value) {
+    return JSON.stringify({ [key]: value });
+}
+function jsonArray(value, key) {
+    if (Array.isArray(value)) {
+        return value;
+    }
+    if (typeof value === "object" && value !== null) {
+        const candidate = value[key];
+        return Array.isArray(candidate) ? candidate : undefined;
+    }
+    return undefined;
+}
 class FamilienPlan extends utils.Adapter {
     apiTimer;
     clockTimer;
@@ -344,8 +357,8 @@ class FamilienPlan extends utils.Adapter {
             statusDate: data.statusDate,
             date: data.date,
             basis: data.basis,
-            dailySchedule: JSON.stringify(data.dailySchedule),
-            weeklySchedule: JSON.stringify(data.weeklySchedule),
+            dailySchedule: jsonObject("dailySchedule", data.dailySchedule),
+            weeklySchedule: jsonObject("weeklySchedule", data.weeklySchedule),
             json: JSON.stringify(data),
         });
         for (const [key, label] of [
@@ -612,17 +625,17 @@ class FamilienPlan extends utils.Adapter {
     async process(apiVersion, scopes, children, events, from, to, now, api) {
         await Promise.all([
             this.setStateAsync("info.apiVersion", apiVersion, true),
-            this.setStateAsync("info.scopes", JSON.stringify(scopes), true),
+            this.setStateAsync("info.scopes", jsonObject("scopes", scopes), true),
             this.setStateAsync("info.eventCount", events.length, true),
             this.setStateAsync("info.queryRange", JSON.stringify({ from: from.toISO(), to: to.toISO() }), true),
-            this.setStateAsync("calendar.json", JSON.stringify(events.map(aggregation_1.completeEvent)), true),
+            this.setStateAsync("calendar.json", jsonObject("calendar", events.map(aggregation_1.completeEvent)), true),
             this.setStateAsync("calendar.count", events.length, true),
             this.setStateAsync("calendar.lastUpdated", now.toISO(), true),
         ]);
         await this.writeChildren(children, api, now);
         await this.loadStayResponsibleNames(events, api);
         await this.writeFields("calendar", {
-            displayJson: JSON.stringify(events.map((event) => this.displayEvent(event))),
+            displayJson: jsonObject("calendar", events.map((event) => this.displayEvent(event))),
         });
         // API and projection work above can take longer than the trigger catch-up
         // window. Use the actual evaluation time as the trigger-check boundary.
@@ -638,8 +651,8 @@ class FamilienPlan extends utils.Adapter {
             return;
         }
         try {
-            const value = JSON.parse(state.val);
-            if (!Array.isArray(value)) {
+            const value = jsonArray(JSON.parse(state.val), "calendar");
+            if (!value) {
                 return;
             }
             this.events = (0, validation_1.parseEvents)(value, (index, reason) => this.log.warn(`Ungültiges gespeichertes Kalenderereignis an Position ${index} übersprungen: ${reason}`));
@@ -875,10 +888,10 @@ class FamilienPlan extends utils.Adapter {
             const [next, nextAfter] = (0, aggregation_1.nextOccurrences)(list, now);
             const active = list.filter((event) => (0, aggregation_1.isEventActive)(event, now));
             await this.writeFields(root, {
-                json: JSON.stringify(list.map((event) => this.displayEvent(event))),
+                json: jsonObject(root === "appointments" ? "appointments" : "events", list.map((event) => this.displayEvent(event))),
                 count: list.length,
                 active: active.length > 0,
-                activeJson: JSON.stringify(active.map((event) => this.displayEvent(event))),
+                activeJson: jsonObject("activeEvents", active.map((event) => this.displayEvent(event))),
                 activeCount: active.length,
                 lastUpdated: now.toISO(),
             });
@@ -891,7 +904,7 @@ class FamilienPlan extends utils.Adapter {
                 await this.ensureFolder(monthRoot, this.monthName(month));
                 await this.writeFields(monthRoot, {
                     count: monthEvents.length,
-                    json: JSON.stringify(monthEvents.map((event) => this.displayEvent(event))),
+                    json: jsonObject("events", monthEvents.map((event) => this.displayEvent(event))),
                 });
             }
         }
@@ -962,14 +975,25 @@ class FamilienPlan extends utils.Adapter {
         const root = "calendar.current";
         await this.ensureFolder(root, "Gerade aktive Ereignisse");
         const previousIds = String((await this.getStateAsync(`${root}.eventIds`))?.val || "[]");
-        const nextIds = JSON.stringify(eventIds);
+        const nextIds = jsonObject("eventIds", eventIds);
+        const previousEventIds = jsonArray((() => {
+            try {
+                return JSON.parse(previousIds);
+            }
+            catch {
+                return undefined;
+            }
+        })(), "eventIds");
         const oldRevision = Number((await this.getStateAsync(`${root}.revision`))?.val || 0);
         await this.writeFields(root, {
             active: active.length > 0,
             count: active.length,
             eventIds: nextIds,
-            json: JSON.stringify(active.map((event) => this.displayEvent(event))),
-            revision: previousIds === nextIds ? oldRevision : oldRevision + 1,
+            json: jsonObject("events", active.map((event) => this.displayEvent(event))),
+            revision: previousEventIds &&
+                JSON.stringify(previousEventIds) === JSON.stringify(eventIds)
+                ? oldRevision
+                : oldRevision + 1,
             lastUpdated: now.toISO(),
         });
     }
@@ -988,7 +1012,7 @@ class FamilienPlan extends utils.Adapter {
                 .map((event) => ({ ...event, ...this.displayEvent(event) }));
             await this.ensureFolder(root, day === 0 ? "Heute" : day === 1 ? "Morgen" : `In ${day} Tagen`);
             await this.writeFields(root, {
-                json: JSON.stringify(entries),
+                json: jsonObject("timeline", entries),
                 text: (0, aggregation_1.timelineText)(entries, this.cfg.timelineTemplate, this.cfg.timelineSeparator, this.cfg.timezone, this.cfg.timeFormat, this.cfg.dateFormat),
                 count: entries.length,
                 next: JSON.stringify(entries[0] ?? {}),
@@ -1003,27 +1027,25 @@ class FamilienPlan extends utils.Adapter {
             return;
         }
         const all = (0, aggregation_1.uniqueOccurrences)(events.filter((event) => event.event_type === "BIRTHDAY"));
-        const [next, nextAfter] = (0, aggregation_1.nextOccurrences)(all, now);
+        const upcoming = (0, birthdays_1.upcomingBirthdays)([...all, ...this.childBirthdayEvents], now, this.cfg.timezone, this.cfg.birthdayDateFormat, this.childrenData);
+        const next = upcoming[0]?.event;
+        const nextAfter = upcoming[1]?.event;
         await this.writeBirthdayOccurrence("birthdays.next", "Nächster Geburtstag", next, now);
         await this.writeBirthdayOccurrence("birthdays.nextAfter", "Darauffolgender Geburtstag", nextAfter, now);
-        const significant = all.find((event) => {
-            const age = Number(event.age ?? 0);
-            return age === 18 || (age >= 20 && age % 10 === 0);
-        });
+        const significant = upcoming.find(({ age }) => age != null && (age === 18 || (age >= 20 && age % 10 === 0)))?.event;
         await this.writeBirthdayOccurrence("birthdays.nextSignificant", "Nächster bedeutender Geburtstag", significant, now);
         await this.ensureFolder("birthdays.summary", "Zusammenfassung der Geburtstage");
-        const upcoming = (0, birthdays_1.upcomingBirthdays)([...all, ...this.childBirthdayEvents], now, this.cfg.timezone, this.cfg.birthdayDateFormat, this.childrenData);
         const summary = upcoming.map(({ event, ...item }) => ({
             ...this.displayEvent(event),
             ...item,
         }));
         await this.writeFields("birthdays.summary", {
             count: summary.length,
-            json: JSON.stringify(summary),
+            json: jsonObject("birthdays", summary),
             daysUntil: upcoming[0]?.daysUntil ?? null,
             text: (0, birthdays_1.birthdaySummaryText)(upcoming) || this.cfg.birthdayEmptyText || "",
-            nextJson: JSON.stringify(summary.filter((item) => item.daysUntil === upcoming[0]?.daysUntil)),
-            jsonSignificant: JSON.stringify(summary.filter(({ age }) => age != null && (age === 18 || (age >= 20 && age % 10 === 0)))),
+            nextJson: jsonObject("birthdays", summary.filter((item) => item.daysUntil === upcoming[0]?.daysUntil)),
+            jsonSignificant: jsonObject("birthdays", summary.filter(({ age }) => age != null && (age === 18 || (age >= 20 && age % 10 === 0)))),
         });
         for (let month = 1; month <= 12; month++) {
             const root = `birthdays.month.${String(month).padStart(2, "0")}`;
@@ -1032,7 +1054,7 @@ class FamilienPlan extends utils.Adapter {
             await this.ensureFolder(root, this.monthName(month));
             await this.writeFields(root, {
                 count: monthEvents.length,
-                json: JSON.stringify(monthEvents.map((event) => ({
+                json: jsonObject("birthdays", monthEvents.map((event) => ({
                     ...(0, aggregation_1.birthdayItem)(event, now, this.cfg.timezone, this.cfg.birthdayDateFormat, this.childrenData.find((child) => child.id === event.child_id)
                         ?.birth_date),
                     ...this.displayEvent(event),
@@ -1046,6 +1068,12 @@ class FamilienPlan extends utils.Adapter {
             ? (0, aggregation_1.birthdayItem)(event, now, this.cfg.timezone, this.cfg.birthdayDateFormat, this.childrenData.find((child) => child.id === event.child_id)
                 ?.birth_date)
             : undefined;
+        const json = event
+            ? {
+                ...this.displayEvent(event),
+                ...item,
+            }
+            : {};
         await this.writeFields(root, {
             name: item?.name ?? "",
             first_name: event?.first_name ?? "",
@@ -1055,6 +1083,8 @@ class FamilienPlan extends utils.Adapter {
             birth_date: event?.birth_date ?? null,
             age: item?.age ?? null,
             birthDate: item?.birthDate ?? "",
+            daysUntil: item?.daysUntil ?? null,
+            json: JSON.stringify(json),
             text: item
                 ? item.age == null
                     ? (0, birthdays_1.birthdaySummaryText)([{ ...item, event: event }])
@@ -1083,7 +1113,7 @@ class FamilienPlan extends utils.Adapter {
         await this.writeOccurrence("waste.nextAfter", "Darauffolgende Abholung", nextAfter, now, false);
         await this.writeFields("waste", {
             count: mapped.length,
-            json: JSON.stringify(mapped.map(({ event, item }) => ({
+            json: jsonObject("waste", mapped.map(({ event, item }) => ({
                 ...item,
                 ...this.displayEvent(event),
             }))),
@@ -1099,7 +1129,7 @@ class FamilienPlan extends utils.Adapter {
             await this.writeOccurrence(`${root}.nextAfter`, "Darauffolgende Abholung", typeNextAfter, now, false);
             await this.writeFields(root, {
                 count: entries.length,
-                json: JSON.stringify(entries.map(({ event, item }) => ({
+                json: jsonObject("waste", entries.map(({ event, item }) => ({
                     ...item,
                     ...this.displayEvent(event),
                 }))),
@@ -1125,11 +1155,12 @@ class FamilienPlan extends utils.Adapter {
         }
         await this.ensureFolder(root, "Abfall-Erinnerung");
         await this.ensureState(`${root}.reset`, "Erinnerung quittieren", "boolean", "button", true, false);
-        await this.ensureState(`${root}._acknowledgedDates`, "Quittierte Abholtage", "string", "json", false, "[]");
+        await this.ensureState(`${root}._acknowledgedDates`, "Quittierte Abholtage", "string", "json", false, jsonObject("dates", []));
         let acknowledgedDates = [];
         try {
-            const stored = JSON.parse(String((await this.getStateAsync(`${root}._acknowledgedDates`))?.val || "[]"));
-            if (Array.isArray(stored)) {
+            const stored = jsonArray(JSON.parse(String((await this.getStateAsync(`${root}._acknowledgedDates`))?.val ||
+                "[]")), "dates");
+            if (stored) {
                 const today = now
                     .setZone(this.cfg.timezone || "Europe/Berlin")
                     .toISODate();
@@ -1151,7 +1182,7 @@ class FamilienPlan extends utils.Adapter {
             reminder.active = false;
             reminder.acknowledged = true;
         }
-        await this.setStateAsync(`${root}._acknowledgedDates`, JSON.stringify(acknowledgedDates), true);
+        await this.setStateAsync(`${root}._acknowledgedDates`, jsonObject("dates", acknowledgedDates), true);
         await this.setStateAsync(`${root}.reset`, false, true);
         await this.writeFields(root, {
             collectionDate: reminder?.key ?? "",
@@ -1162,7 +1193,7 @@ class FamilienPlan extends utils.Adapter {
             types: reminder?.types.join(", ") ?? "",
             count: reminder?.entries.length ?? 0,
             text: reminder?.text ?? this.cfg.wasteEmptyText ?? "",
-            json: JSON.stringify(reminder?.entries.map((event) => ({
+            json: jsonObject("waste", reminder?.entries.map((event) => ({
                 ...(0, aggregation_1.wasteItem)(event, now, this.cfg.timezone, this.cfg.wasteMappings || []),
                 ...this.displayEvent(event),
             })) ?? []),
@@ -1392,8 +1423,8 @@ class FamilienPlan extends utils.Adapter {
             });
         }
         await this.writeStateIfChanged("info.scheduledTriggerCount", future.filter((t) => !t.triggered).length);
-        await this.ensureState("triggers.schedule", "Triggerplan", "string", "json", false, "[]");
-        await this.writeStateIfChanged("triggers.schedule", JSON.stringify(future));
+        await this.ensureState("triggers.schedule", "Triggerplan", "string", "json", false, jsonObject("schedule", []));
+        await this.writeStateIfChanged("triggers.schedule", jsonObject("schedule", future));
         await this.writeStateIfChanged("triggers._history", JSON.stringify(history));
         if (!this.lastTriggerCheckPersistedAt ||
             now.diff(this.lastTriggerCheckPersistedAt, "seconds").seconds >= 60) {
