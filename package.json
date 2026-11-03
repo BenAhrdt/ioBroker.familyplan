@@ -51,7 +51,7 @@
   "dependencies": {
     "@iobroker/adapter-core": "^3.4.3",
     "luxon": "^3.7.2",
-    "undici": "^8.11.2",
+    "undici": "^8.12.3",
     "zod": "^4.6.7"
   },
   "devDependencies": {
